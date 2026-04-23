@@ -2,990 +2,856 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ครัวออยออย — บัญชีรายวัน</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600&family=Kanit:wght@400;500;600&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>ครัวออยออย</title>
+<link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500;600&family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-:root {
-  --bg: #f7f5f0;
-  --surface: #ffffff;
-  --surface2: #f0ede6;
-  --border: #e0dbd0;
-  --text: #1a1714;
-  --text2: #6b6560;
-  --text3: #a09890;
-  --green: #2d6a4f;
-  --green-bg: #d8f3dc;
-  --red: #9b2335;
-  --red-bg: #fde8eb;
-  --blue: #1a4e8f;
-  --blue-bg: #dbeafe;
-  --amber: #92400e;
-  --amber-bg: #fef3c7;
-  --accent: #c8622a;
-  --accent-bg: #fce8db;
-  --radius: 12px;
-  --radius-sm: 8px;
-  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
-  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+:root{
+  --bg:#0f0d0b;
+  --surface:#1a1612;
+  --surface2:#221e19;
+  --surface3:#2c2721;
+  --border:rgba(255,200,120,0.1);
+  --border2:rgba(255,200,120,0.2);
+  --text:#f5ede0;
+  --text2:#b8a48a;
+  --text3:#7a6a55;
+  --orange:#e8641a;
+  --orange2:#ff7a2a;
+  --orange-dim:rgba(232,100,26,0.15);
+  --green:#2ea87a;
+  --green-dim:rgba(46,168,122,0.12);
+  --red:#e05060;
+  --red-dim:rgba(224,80,96,0.12);
+  --blue:#5090e0;
+  --blue-dim:rgba(80,144,224,0.12);
+  --amber:#d4881a;
+  --amber-dim:rgba(212,136,26,0.12);
+  --r:14px; --rsm:9px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow-x:hidden}
+body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.5}
+
+/* HEADER */
+.hdr{
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  padding:0 1.25rem;
+  height:60px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:50;
+  backdrop-filter:blur(12px);
+}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-badge{
+  width:34px;height:34px;border-radius:10px;
+  background:var(--orange);
+  display:flex;align-items:center;justify-content:center;
+  font-size:17px;
+  box-shadow:0 0 12px rgba(232,100,26,0.4);
+}
+.logo-name{font-family:'Mitr',sans-serif;font-size:17px;font-weight:500;color:var(--text)}
+.logo-name span{color:var(--orange)}
+.hdr-actions{display:flex;gap:8px;align-items:center}
+.hdr-btn{
+  display:flex;align-items:center;gap:5px;
+  padding:6px 12px;border-radius:20px;
+  border:1px solid var(--border2);
+  background:var(--surface2);
+  color:var(--text2);font-size:12px;font-weight:500;
+  cursor:pointer;font-family:'Sarabun',sans-serif;
+  transition:all 0.15s;
+}
+.hdr-btn:hover{background:var(--surface3);color:var(--text);border-color:rgba(255,200,120,0.35)}
+.hdr-btn.green-btn{border-color:rgba(46,168,122,0.35);color:var(--green)}
+.hdr-btn.green-btn:hover{background:var(--green-dim)}
+.hdr-btn.sheet-btn{border-color:rgba(80,144,224,0.35);color:var(--blue)}
+.hdr-btn.sheet-btn:hover{background:var(--blue-dim)}
+
+/* SECTIONS */
+.section{display:none}
+.section.active{display:block;animation:fadeUp .2s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* HERO */
+.hero{
+  background:linear-gradient(160deg,#1e1810 0%,#0f0d0b 60%);
+  padding:1.5rem 1.25rem 2.5rem;
+  border-bottom:1px solid var(--border);
+  position:relative;overflow:hidden;
+}
+.hero::before{
+  content:'';position:absolute;top:-60px;right:-40px;
+  width:200px;height:200px;border-radius:50%;
+  background:radial-gradient(circle,rgba(232,100,26,0.15) 0%,transparent 70%);
+  pointer-events:none;
+}
+.date-nav{display:flex;align-items:center;gap:8px;margin-bottom:1.25rem}
+.dnav-btn{
+  width:32px;height:32px;border-radius:8px;
+  background:var(--surface2);border:1px solid var(--border);
+  color:var(--text2);cursor:pointer;font-size:16px;
+  display:flex;align-items:center;justify-content:center;
+  transition:all 0.15s;
+}
+.dnav-btn:hover{background:var(--surface3);color:var(--text)}
+.dnav-center{flex:1;text-align:center}
+.dnav-label{font-family:'Mitr',sans-serif;font-size:15px;color:var(--text)}
+.today-tag{
+  display:inline-block;background:var(--orange);color:#fff;
+  font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px;margin-left:6px;
+  vertical-align:middle;
+}
+.hero-number{text-align:center;margin-bottom:0.25rem}
+.hero-lbl{font-size:11px;color:var(--text3);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px}
+.hero-val{
+  font-family:'Mitr',sans-serif;font-size:48px;font-weight:500;
+  color:var(--text);letter-spacing:-0.02em;transition:color 0.4s;
+}
+.hero-val.pos{color:var(--green);text-shadow:0 0 40px rgba(46,168,122,0.25)}
+.hero-val.neg{color:var(--red);text-shadow:0 0 40px rgba(224,80,96,0.25)}
+
+/* METRIC CARDS */
+.metrics{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:8px;
+  padding:0 1.25rem;
+  margin-top:-24px;position:relative;z-index:2;
+}
+.metric{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  padding:12px 14px;
+  box-shadow:0 8px 24px rgba(0,0,0,0.3);
+  transition:transform 0.15s,border-color 0.15s;
+}
+.metric:active{transform:scale(0.97)}
+.metric-lbl{font-size:10px;color:var(--text3);letter-spacing:0.04em;margin-bottom:5px}
+.metric-val{font-family:'Mitr',sans-serif;font-size:17px;font-weight:500;color:var(--text)}
+.mv-g{color:var(--green)} .mv-r{color:var(--red)} .mv-b{color:var(--blue)} .mv-a{color:var(--amber)}
+
+/* BODY */
+.body-pad{padding:1.25rem}
+
+/* CARD */
+.card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  padding:1.25rem;margin-bottom:1rem;
+}
+.card-ttl{
+  font-family:'Mitr',sans-serif;font-size:13px;font-weight:400;color:var(--text2);
+  margin-bottom:1rem;display:flex;align-items:center;gap:7px;
+}
+.card-ttl::before{
+  content:'';width:3px;height:14px;background:var(--orange);
+  border-radius:2px;flex-shrink:0;
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+/* ENTRY */
+.entry-list{display:flex;flex-direction:column;gap:6px}
+.entry{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:11px 14px;background:var(--surface2);
+  border:1px solid var(--border);border-radius:var(--rsm);
+  transition:border-color 0.15s,background 0.15s;
+}
+.entry:hover{background:var(--surface3);border-color:var(--border2)}
+.entry-l{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+.entry-icon{
+  width:38px;height:38px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;flex-shrink:0;
+}
+.ei-in{background:var(--green-dim);box-shadow:0 0 0 1px rgba(46,168,122,0.2)}
+.ei-out{background:var(--red-dim);box-shadow:0 0 0 1px rgba(224,80,96,0.2)}
+.entry-body{min-width:0}
+.entry-name{font-size:13px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.entry-sub{font-size:11px;color:var(--text3);margin-top:2px;display:flex;gap:6px;align-items:center}
+.entry-r{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.entry-amt{font-family:'Mitr',sans-serif;font-size:15px;font-weight:500}
+.ain{color:var(--green)} .aout{color:var(--red)}
+.del{
+  width:28px;height:28px;border-radius:50%;border:none;background:none;
+  cursor:pointer;color:var(--text3);font-size:13px;
+  display:flex;align-items:center;justify-content:center;transition:all 0.1s;
+}
+.del:hover{background:var(--red-dim);color:var(--red)}
 
-body {
-  font-family: 'Sarabun', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
-  font-size: 15px;
-}
+/* BADGE */
+.badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:500}
+.bc{background:var(--green-dim);color:var(--green);box-shadow:0 0 0 1px rgba(46,168,122,0.2)}
+.bt{background:var(--blue-dim);color:var(--blue);box-shadow:0 0 0 1px rgba(80,144,224,0.2)}
+.bl{background:var(--amber-dim);color:var(--amber)}
+.bm{background:var(--orange-dim);color:var(--orange2)}
+.bo{background:var(--surface3);color:var(--text2);box-shadow:0 0 0 1px var(--border2)}
 
-/* ── MAIN APP ── */
-#app { display: none; max-width: 680px; margin: 0 auto; padding: 0 0 80px; }
+/* FORM HERO */
+.form-top{
+  background:var(--surface);border-bottom:1px solid var(--border);
+  padding:1.5rem 1.25rem 1.75rem;position:relative;overflow:hidden;
+}
+.form-top::after{
+  content:'';position:absolute;bottom:-30px;right:-30px;
+  width:120px;height:120px;border-radius:50%;opacity:0.08;
+}
+.ft-in::after{background:var(--green)}
+.ft-out::after{background:var(--red)}
+.ft-icon{
+  width:48px;height:48px;border-radius:14px;
+  display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:10px;
+}
+.fti-in{background:var(--green-dim);box-shadow:0 0 20px rgba(46,168,122,0.15)}
+.fti-out{background:var(--red-dim);box-shadow:0 0 20px rgba(224,80,96,0.15)}
+.ft-title{font-family:'Mitr',sans-serif;font-size:22px;font-weight:500;color:var(--text)}
+.ft-sub{font-size:12px;color:var(--text3);margin-top:2px}
 
-/* Header */
-.header {
-  padding: 1.25rem 1.25rem 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 1.25rem;
+.form-body{padding:0 1.25rem}
+.fcard{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  padding:1.25rem;margin-top:1rem;margin-bottom:1rem;
 }
-.header-left {}
-.logo { font-family: 'Kanit', sans-serif; font-size: 22px; font-weight: 600; color: var(--accent); }
-.logo-sub { font-size: 12px; color: var(--text3); }
-.header-right { display: flex; align-items: center; gap: 8px; }
-.date-badge {
-  font-size: 12px;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 5px 12px;
-  color: var(--text2);
+.field{margin-bottom:14px}
+.field:last-child{margin-bottom:0}
+.field label{display:block;font-size:12px;font-weight:500;color:var(--text2);margin-bottom:6px;letter-spacing:0.03em}
+.field input{
+  width:100%;padding:11px 13px;
+  background:var(--surface2);border:1.5px solid var(--border2);
+  border-radius:var(--rsm);font-size:15px;font-family:'Sarabun',sans-serif;
+  color:var(--text);transition:border-color 0.15s,box-shadow 0.15s;
 }
+.field input::placeholder{color:var(--text3)}
+.field input:focus{outline:none;border-color:var(--orange);box-shadow:0 0 0 3px rgba(232,100,26,0.15)}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 
-/* Date nav */
-.date-nav {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0 1.25rem;
-  margin-bottom: 1rem;
+/* CHIPS */
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{
+  padding:8px 15px;border-radius:20px;font-size:13px;
+  font-family:'Sarabun',sans-serif;font-weight:500;
+  border:1.5px solid var(--border2);background:var(--surface2);
+  color:var(--text2);cursor:pointer;transition:all 0.15s;
 }
-.date-nav-btn {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 7px 14px;
-  cursor: pointer;
-  font-size: 16px;
-  color: var(--text2);
-  transition: background 0.1s;
-}
-.date-nav-btn:hover { background: var(--surface2); }
-.date-nav-label {
-  flex: 1;
-  text-align: center;
-  font-family: 'Kanit', sans-serif;
-  font-size: 15px;
-  font-weight: 500;
-  color: var(--text);
-}
-.today-chip {
-  font-size: 11px;
-  background: var(--accent-bg);
-  color: var(--accent);
-  border-radius: 20px;
-  padding: 3px 9px;
-  font-weight: 500;
-}
+.chip:hover{border-color:var(--orange);color:var(--orange2)}
+.chip.sel{background:var(--orange);border-color:var(--orange);color:#fff;box-shadow:0 0 12px rgba(232,100,26,0.3)}
 
-/* Bottom nav */
-.bottom-nav {
-  position: fixed;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100%;
-  max-width: 680px;
-  background: var(--surface);
-  border-top: 1px solid var(--border);
-  display: flex;
-  z-index: 100;
+/* SUBMIT */
+.btn-sub{
+  width:100%;padding:14px;border:none;border-radius:var(--rsm);
+  font-size:15px;font-weight:500;font-family:'Mitr',sans-serif;
+  cursor:pointer;letter-spacing:0.02em;
+  transition:opacity 0.15s,transform 0.1s,box-shadow 0.15s;
+  display:flex;align-items:center;justify-content:center;gap:8px;
 }
-.nav-item {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 10px 4px 12px;
-  cursor: pointer;
-  border: none;
-  background: none;
-  font-family: 'Sarabun', sans-serif;
-  color: var(--text3);
-  gap: 3px;
-  transition: color 0.15s;
-}
-.nav-item.active { color: var(--accent); }
-.nav-icon { font-size: 20px; }
-.nav-label { font-size: 10px; font-weight: 500; }
+.btn-sub:active{transform:scale(0.99)}
+.btn-sub:disabled{opacity:0.4;cursor:not-allowed}
+.bs-in{background:var(--green);color:#fff;box-shadow:0 4px 20px rgba(46,168,122,0.3)}
+.bs-in:hover{box-shadow:0 4px 28px rgba(46,168,122,0.45)}
+.bs-out{background:var(--red);color:#fff;box-shadow:0 4px 20px rgba(224,80,96,0.3)}
+.bs-out:hover{box-shadow:0 4px 28px rgba(224,80,96,0.45)}
 
-/* Metric cards */
-.metrics {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  padding: 0 1.25rem;
-  margin-bottom: 1rem;
+/* TABS */
+.tabs{
+  display:flex;background:var(--surface2);border-radius:10px;padding:3px;gap:2px;margin-bottom:1rem;
 }
-.metric {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 12px 14px;
-  box-shadow: var(--shadow);
+.tab-btn{
+  flex:1;padding:8px 6px;border:none;border-radius:8px;
+  font-size:12px;font-weight:500;font-family:'Sarabun',sans-serif;
+  cursor:pointer;background:transparent;color:var(--text3);transition:all 0.15s;
 }
-.metric-label { font-size: 11px; color: var(--text3); margin-bottom: 5px; }
-.metric-value { font-family: 'Kanit', sans-serif; font-size: 18px; font-weight: 500; }
-.metric-value.green { color: var(--green); }
-.metric-value.red { color: var(--red); }
-.metric-value.blue { color: var(--blue); }
-.metric-value.amber { color: var(--amber); }
+.tab-btn.active{background:var(--surface3);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,0.3)}
 
-/* Cards */
-.card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 1.25rem;
-  margin: 0 1.25rem 1rem;
-  box-shadow: var(--shadow);
+/* BOTTOM NAV */
+.bnav{
+  position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  width:100%;max-width:680px;
+  background:var(--surface);border-top:1px solid var(--border);
+  display:flex;z-index:100;
+  padding-bottom:env(safe-area-inset-bottom);
 }
-.card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 1rem;
+.ni{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:10px 4px 12px;cursor:pointer;border:none;background:none;
+  font-family:'Sarabun',sans-serif;color:var(--text3);gap:3px;
+  transition:color 0.15s;position:relative;
 }
-.card-title { font-family: 'Kanit', sans-serif; font-size: 14px; font-weight: 500; color: var(--text2); }
+.ni.active{color:var(--orange)}
+.ni.active::before{
+  content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:20px;height:2px;background:var(--orange);border-radius:0 0 2px 2px;
+  box-shadow:0 0 8px var(--orange);
+}
+.ni-icon{font-size:19px;line-height:1}
+.ni-lbl{font-size:10px;font-weight:500}
 
-/* Entry list */
-.entry-list { display: flex; flex-direction: column; gap: 6px; }
-.entry-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 11px 14px;
-  background: var(--surface2);
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-  transition: background 0.1s;
-}
-.entry-item:hover { background: var(--bg); }
-.entry-left { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
-.entry-icon {
-  width: 36px; height: 36px;
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 15px;
-  flex-shrink: 0;
-}
-.icon-income { background: var(--green-bg); }
-.icon-expense { background: var(--red-bg); }
-.entry-body { min-width: 0; }
-.entry-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.entry-meta { font-size: 11px; color: var(--text3); margin-top: 2px; }
-.entry-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-.entry-amount { font-family: 'Kanit', sans-serif; font-size: 15px; font-weight: 500; }
-.amount-in { color: var(--green); }
-.amount-out { color: var(--red); }
-.del-btn {
-  background: none; border: none;
-  width: 26px; height: 26px;
-  border-radius: 50%;
-  cursor: pointer;
-  color: var(--text3);
-  font-size: 13px;
-  display: flex; align-items: center; justify-content: center;
-  transition: background 0.1s, color 0.1s;
-}
-.del-btn:hover { background: var(--red-bg); color: var(--red); }
+/* CHART */
+.chart-wrap{position:relative;width:100%}
+.h200{height:200px}.h220{height:220px}.h180{height:180px}
 
-/* Badges */
-.badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 8px;
-  border-radius: 20px;
-  font-size: 10px;
-  font-weight: 500;
-  flex-shrink: 0;
+/* COMPARE */
+.cmp-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 1.25rem 1rem}
+.cmp-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  padding:12px 14px;
 }
-.badge-cash { background: var(--green-bg); color: var(--green); }
-.badge-transfer { background: var(--blue-bg); color: var(--blue); }
-.badge-labor { background: var(--amber-bg); color: var(--amber); }
-.badge-market { background: var(--accent-bg); color: var(--accent); }
-.badge-other { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
+.cmp-card.today{border-color:rgba(232,100,26,0.4);box-shadow:0 0 12px rgba(232,100,26,0.08)}
+.cmp-date{font-size:11px;color:var(--text3);margin-bottom:8px}
+.cmp-row{display:flex;justify-content:space-between;font-size:12px;padding:3px 0}
+.cmp-key{color:var(--text2)}
 
-/* Form */
-.section { display: none; }
-.section.active { display: block; }
+/* LEGEND */
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:10px}
+.leg{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)}
+.leg-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
 
-.form-section { padding: 0 1.25rem; }
-.form-title {
-  font-family: 'Kanit', sans-serif;
-  font-size: 16px;
-  font-weight: 500;
-  margin-bottom: 1rem;
+/* MISC */
+.empty{text-align:center;padding:2.5rem 1rem;color:var(--text3)}
+.empty-icon{font-size:36px;margin-bottom:10px;opacity:0.4}
+.empty-text{font-size:13px}
+.loading{text-align:center;padding:2rem;color:var(--text3);font-size:13px}
+.spacer{height:80px}
+#toast{
+  position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(14px);
+  background:var(--surface3);color:var(--text);
+  padding:10px 20px;border-radius:20px;border:1px solid var(--border2);
+  font-size:13px;font-weight:500;
+  opacity:0;transition:all 0.25s;z-index:200;
+  white-space:nowrap;pointer-events:none;
 }
-.form-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 1.25rem;
-  margin-bottom: 1rem;
-  box-shadow: var(--shadow);
-}
-.field { margin-bottom: 14px; }
-.field label { display: block; font-size: 12px; color: var(--text2); margin-bottom: 5px; font-weight: 500; }
-.field input, .field select {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  font-size: 14px;
-  font-family: 'Sarabun', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  transition: border-color 0.15s;
-}
-.field input:focus, .field select:focus {
-  outline: none;
-  border-color: var(--accent);
-  background: var(--surface);
-}
-.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.success{background:#1a3d2a;color:var(--green);border-color:rgba(46,168,122,0.3)}
+#toast.error{background:#3d1a1e;color:var(--red);border-color:rgba(224,80,96,0.3)}
 
-/* Chip group */
-.chip-group { display: flex; flex-wrap: wrap; gap: 6px; }
-.chip {
-  padding: 7px 14px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 500;
-  border: 1.5px solid var(--border);
-  cursor: pointer;
-  color: var(--text2);
-  background: var(--surface);
-  transition: all 0.15s;
-  font-family: 'Sarabun', sans-serif;
-}
-.chip.sel-cash { border-color: var(--green); background: var(--green-bg); color: var(--green); }
-.chip.sel-transfer { border-color: var(--blue); background: var(--blue-bg); color: var(--blue); }
-.chip.sel-labor { border-color: var(--amber); background: var(--amber-bg); color: var(--amber); }
-.chip.sel-market { border-color: var(--accent); background: var(--accent-bg); color: var(--accent); }
-.chip.sel-other { border-color: var(--text2); background: var(--surface2); color: var(--text); }
-
-/* Submit button */
-.btn-submit {
-  width: 100%;
-  padding: 14px;
-  background: var(--accent);
-  color: white;
-  border: none;
-  border-radius: var(--radius-sm);
-  font-size: 15px;
-  font-weight: 500;
-  font-family: 'Sarabun', sans-serif;
-  cursor: pointer;
-  transition: opacity 0.15s, transform 0.1s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-.btn-submit:hover { opacity: 0.9; }
-.btn-submit:active { transform: scale(0.99); }
-.btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
-.btn-submit.green { background: var(--green); }
-
-/* Chart area */
-.chart-wrap { position: relative; width: 100%; height: 200px; }
-.chart-wrap.tall { height: 240px; }
-
-/* Tab switcher */
-.tabs {
-  display: flex;
-  background: var(--surface2);
-  border-radius: var(--radius-sm);
-  padding: 3px;
-  margin-bottom: 1rem;
-  gap: 2px;
-}
-.tab-btn {
-  flex: 1;
-  padding: 7px;
-  border: none;
-  border-radius: calc(var(--radius-sm) - 2px);
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  background: transparent;
-  color: var(--text2);
-  font-family: 'Sarabun', sans-serif;
-  transition: all 0.15s;
-}
-.tab-btn.active {
-  background: var(--surface);
-  color: var(--text);
-  box-shadow: var(--shadow);
-}
-
-/* Empty state */
-.empty {
-  text-align: center;
-  padding: 2.5rem 1rem;
-  color: var(--text3);
-}
-.empty-icon { font-size: 36px; margin-bottom: 10px; }
-.empty-text { font-size: 13px; }
-
-/* Loading */
-.loading {
-  text-align: center;
-  padding: 2rem;
-  color: var(--text3);
-  font-size: 13px;
-}
-
-/* Toast */
-#toast {
-  position: fixed;
-  bottom: 90px;
-  left: 50%;
-  transform: translateX(-50%) translateY(20px);
-  background: var(--text);
-  color: white;
-  padding: 10px 20px;
-  border-radius: 20px;
-  font-size: 13px;
-  font-weight: 500;
-  opacity: 0;
-  transition: all 0.25s;
-  z-index: 200;
-  white-space: nowrap;
-}
-#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-#toast.success { background: var(--green); }
-#toast.error { background: var(--red); }
-
-/* Compare section */
-.compare-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  padding: 0 1.25rem;
-}
-.compare-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 12px 14px;
-  box-shadow: var(--shadow);
-}
-.compare-date { font-size: 11px; color: var(--text3); margin-bottom: 8px; }
-.compare-row { display: flex; justify-content: space-between; font-size: 12px; padding: 3px 0; }
-.compare-key { color: var(--text2); }
-
-/* Legend */
-.legend { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 10px; }
-.legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text2); }
-.legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
-
-@media (max-width: 420px) {
-  .metrics { grid-template-columns: repeat(2, 1fr); }
-  .metric-value { font-size: 16px; }
-  .compare-grid { grid-template-columns: 1fr; }
+@media(max-width:420px){
+  .metrics{grid-template-columns:repeat(2,1fr)}
+  .hero-val{font-size:40px}
+  .hdr-btn span{display:none}
 }
 </style>
 </head>
 <body>
+<div id="app" style="max-width:680px;margin:0 auto">
 
-<!-- ── MAIN APP ── -->
-<div id="app">
-  <div class="header">
-    <div class="header-left">
-      <div class="logo">🍳 ครัวออยออย</div>
-      <div class="logo-sub">บัญชีรายวัน</div>
+<!-- HEADER -->
+<header class="hdr">
+  <div class="logo">
+    <div class="logo-badge">🍳</div>
+    <div>
+      <div class="logo-name">ครัว<span>ออยออย</span></div>
     </div>
-    <div class="header-right">
-      <span id="offline-badge" style="display:none; color: white; background: var(--red); font-size: 10px; padding: 3px 8px; border-radius: 12px; font-weight: 500;">ออฟไลน์</span>
-      <div class="date-badge" id="hdr-date"></div>
+  </div>
+  <div class="hdr-actions">
+    <button class="hdr-btn sheet-btn" onclick="openSheet()">
+      <span>📊</span><span>ดูชีท</span>
+    </button>
+    <button class="hdr-btn green-btn" onclick="downloadExcel()">
+      <span>⬇</span><span>Excel</span>
+    </button>
+  </div>
+</header>
+
+<!-- DASHBOARD -->
+<div class="section active" id="sec-dashboard">
+  <div class="hero">
+    <div class="date-nav">
+      <button class="dnav-btn" onclick="changeDay(-1)">‹</button>
+      <div class="dnav-center">
+        <div class="dnav-label" id="dash-date-label">—</div>
+      </div>
+      <button class="dnav-btn" onclick="changeDay(1)">›</button>
+    </div>
+    <div class="hero-number">
+      <div class="hero-lbl">กำไรสุทธิ</div>
+      <div class="hero-val" id="m-net">฿0</div>
     </div>
   </div>
 
-  <!-- DASHBOARD SECTION -->
-  <div class="section active" id="sec-dashboard">
-    <div class="date-nav">
-      <button class="date-nav-btn" onclick="changeDay(-1)">‹</button>
-      <div>
-        <div class="date-nav-label" id="dash-date-label"></div>
-      </div>
-      <button class="date-nav-btn" onclick="changeDay(1)">›</button>
-      <span class="today-chip" id="today-chip" style="display:none">วันนี้</span>
-    </div>
+  <div class="metrics">
+    <div class="metric"><div class="metric-lbl">รายรับ</div><div class="metric-val mv-g" id="m-income">฿0</div></div>
+    <div class="metric"><div class="metric-lbl">เงินสด</div><div class="metric-val mv-b" id="m-cash">฿0</div></div>
+    <div class="metric"><div class="metric-lbl">โอน</div><div class="metric-val mv-b" id="m-transfer">฿0</div></div>
+    <div class="metric"><div class="metric-lbl">รายจ่าย</div><div class="metric-val mv-r" id="m-expense">฿0</div></div>
+    <div class="metric"><div class="metric-lbl">ค่าแรง</div><div class="metric-val mv-a" id="m-labor">฿0</div></div>
+    <div class="metric"><div class="metric-lbl">รายการ</div><div class="metric-val" id="m-count">0</div></div>
+  </div>
 
-    <div class="metrics" id="dash-metrics">
-      <div class="metric"><div class="metric-label">รายรับรวม</div><div class="metric-value green" id="m-income">—</div></div>
-      <div class="metric"><div class="metric-label">เงินสด</div><div class="metric-value blue" id="m-cash">—</div></div>
-      <div class="metric"><div class="metric-label">เงินโอน</div><div class="metric-value blue" id="m-transfer">—</div></div>
-      <div class="metric"><div class="metric-label">รายจ่ายรวม</div><div class="metric-value red" id="m-expense">—</div></div>
-      <div class="metric"><div class="metric-label">ค่าแรง</div><div class="metric-value amber" id="m-labor">—</div></div>
-      <div class="metric"><div class="metric-label">กำไรสุทธิ</div><div class="metric-value" id="m-net">—</div></div>
-    </div>
-
+  <div class="body-pad" style="padding-top:1.25rem">
     <div class="card">
-      <div class="card-header">
-        <div class="card-title">รายรับ vs รายจ่าย</div>
-      </div>
-      <div class="chart-wrap"><canvas id="dashChart" role="img" aria-label="แผนภูมิรายรับรายจ่ายวันนี้">แผนภูมิรายรับและรายจ่าย</canvas></div>
+      <div class="card-ttl">รายรับ vs รายจ่าย</div>
+      <div class="chart-wrap h200"><canvas id="dashChart" role="img" aria-label="รายรับรายจ่ายวันนี้">รายรับรายจ่าย</canvas></div>
     </div>
-
     <div class="card">
-      <div class="card-header"><div class="card-title">รายจ่ายตามหมวด</div></div>
-      <div class="chart-wrap" style="height:180px;"><canvas id="catChart" role="img" aria-label="สัดส่วนรายจ่ายตามหมวดหมู่">สัดส่วนรายจ่าย</canvas></div>
+      <div class="card-ttl">สัดส่วนรายจ่ายตามหมวด</div>
+      <div class="chart-wrap h180"><canvas id="catChart" role="img" aria-label="สัดส่วนรายจ่าย">สัดส่วน</canvas></div>
     </div>
-
-    <div class="card" id="recent-card">
-      <div class="card-header"><div class="card-title">รายการล่าสุดวันนี้</div></div>
+    <div class="card">
+      <div class="card-ttl">รายการล่าสุด</div>
       <div id="recent-list"><div class="loading">กำลังโหลด...</div></div>
     </div>
   </div>
-
-  <!-- INCOME SECTION -->
-  <div class="section" id="sec-income">
-    <div class="form-section">
-      <div class="form-title">+ บันทึกรายรับ</div>
-      <div class="form-card">
-        <div class="field-row">
-          <div class="field">
-            <label>วันที่</label>
-            <input type="date" id="inc-date">
-          </div>
-          <div class="field">
-            <label>จำนวนเงิน (บาท)</label>
-            <input type="number" id="inc-amount" placeholder="0" min="0" step="1">
-          </div>
-        </div>
-        <div class="field">
-          <label>ประเภทการรับเงิน</label>
-          <div class="chip-group" id="pay-chips">
-            <button class="chip sel-cash" data-val="cash" onclick="selectChip(this,'pay-chips')">💵 เงินสด</button>
-            <button class="chip" data-val="transfer" onclick="selectChip(this,'pay-chips')">📲 เงินโอน</button>
-          </div>
-        </div>
-        <div class="field">
-          <label>หมายเหตุ (ไม่บังคับ)</label>
-          <input type="text" id="inc-note" placeholder="เช่น ขายอาหารเที่ยง">
-        </div>
-        <button class="btn-submit green" onclick="submitIncome()">
-          <span>บันทึกรายรับ</span>
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- EXPENSE SECTION -->
-  <div class="section" id="sec-expense">
-    <div class="form-section">
-      <div class="form-title">− บันทึกรายจ่าย</div>
-      <div class="form-card">
-        <div class="field-row">
-          <div class="field">
-            <label>วันที่</label>
-            <input type="date" id="exp-date">
-          </div>
-          <div class="field">
-            <label>จำนวนเงิน (บาท)</label>
-            <input type="number" id="exp-amount" placeholder="0" min="0" step="1">
-          </div>
-        </div>
-        <div class="field">
-          <label>หมวดหมู่</label>
-          <div class="chip-group" id="cat-chips">
-            <button class="chip sel-labor" data-val="ค่าแรง" onclick="selectChip(this,'cat-chips')">👷 ค่าแรง</button>
-            <button class="chip" data-val="ตลาดสะพานใหม่" onclick="selectChip(this,'cat-chips')">🛒 สะพานใหม่</button>
-            <button class="chip" data-val="ตลาดโพธิ์สุวรรณ" onclick="selectChip(this,'cat-chips')">🛒 โพธิ์สุวรรณ</button>
-            <button class="chip" data-val="เซเว่น" onclick="selectChip(this,'cat-chips')">🏪 เซเว่น</button>
-            <button class="chip" data-val="แมคโคร" onclick="selectChip(this,'cat-chips')">🏬 แมคโคร</button>
-            <button class="chip" data-val="อื่นๆ" onclick="selectChip(this,'cat-chips')">📦 อื่นๆ</button>
-          </div>
-        </div>
-        <div class="field">
-          <label>หมายเหตุ (ไม่บังคับ)</label>
-          <input type="text" id="exp-note" placeholder="เช่น ซื้อผัก หมู ไก่">
-        </div>
-        <button class="btn-submit" onclick="submitExpense()">
-          <span>บันทึกรายจ่าย</span>
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- HISTORY SECTION -->
-  <div class="section" id="sec-history">
-    <div style="padding:0 1.25rem;">
-      <div class="tabs">
-        <button class="tab-btn active" onclick="setHistoryTab('all',this)">ทั้งหมด</button>
-        <button class="tab-btn" onclick="setHistoryTab('income',this)">รายรับ</button>
-        <button class="tab-btn" onclick="setHistoryTab('expense',this)">รายจ่าย</button>
-      </div>
-      <div id="history-list"><div class="loading">กำลังโหลด...</div></div>
-    </div>
-  </div>
-
-  <!-- COMPARE SECTION -->
-  <div class="section" id="sec-compare">
-    <div class="card">
-      <div class="card-header"><div class="card-title">เปรียบเทียบ 7 วันล่าสุด</div></div>
-      <div class="legend">
-        <div class="legend-item"><div class="legend-dot" style="background:#2d6a4f;"></div>รายรับ</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#9b2335;"></div>รายจ่าย</div>
-      </div>
-      <div class="chart-wrap tall"><canvas id="cmpChart" role="img" aria-label="เปรียบเทียบรายรับรายจ่าย 7 วัน">เปรียบเทียบ 7 วัน</canvas></div>
-    </div>
-    <div class="compare-grid" id="compare-cards"></div>
-  </div>
-
-  <!-- Bottom Nav -->
-  <nav class="bottom-nav">
-    <button class="nav-item active" onclick="switchTab('dashboard',this)">
-      <div class="nav-icon">📊</div>
-      <div class="nav-label">แดชบอร์ด</div>
-    </button>
-    <button class="nav-item" onclick="switchTab('income',this)">
-      <div class="nav-icon">💚</div>
-      <div class="nav-label">รายรับ</div>
-    </button>
-    <button class="nav-item" onclick="switchTab('expense',this)">
-      <div class="nav-icon">🔴</div>
-      <div class="nav-label">รายจ่าย</div>
-    </button>
-    <button class="nav-item" onclick="switchTab('history',this)">
-      <div class="nav-icon">📋</div>
-      <div class="nav-label">ประวัติ</div>
-    </button>
-    <button class="nav-item" onclick="switchTab('compare',this)">
-      <div class="nav-icon">📈</div>
-      <div class="nav-label">เปรียบเทียบ</div>
-    </button>
-  </nav>
+  <div class="spacer"></div>
 </div>
+
+<!-- INCOME -->
+<div class="section" id="sec-income">
+  <div class="form-top ft-in">
+    <div class="ft-icon fti-in">💰</div>
+    <div class="ft-title">บันทึกรายรับ</div>
+    <div class="ft-sub">รายรับเข้าร้านครัวออยออย</div>
+  </div>
+  <div class="form-body">
+    <div class="fcard">
+      <div class="field-row">
+        <div class="field"><label>วันที่</label><input type="date" id="inc-date"></div>
+        <div class="field"><label>จำนวนเงิน (บาท)</label><input type="number" id="inc-amount" placeholder="0" min="0" step="1"></div>
+      </div>
+      <div class="field">
+        <label>ประเภทการรับเงิน</label>
+        <div class="chips" id="pay-chips">
+          <button class="chip sel" data-val="cash"     onclick="selectChip(this,'pay-chips')">💵 เงินสด</button>
+          <button class="chip"     data-val="transfer" onclick="selectChip(this,'pay-chips')">📲 เงินโอน</button>
+        </div>
+      </div>
+      <div class="field"><label>หมายเหตุ</label><input type="text" id="inc-note" placeholder="เช่น ขายอาหารเที่ยง"></div>
+      <div style="height:12px"></div>
+      <button class="btn-sub bs-in" onclick="submitIncome()">+ บันทึกรายรับ</button>
+    </div>
+  </div>
+  <div class="spacer"></div>
+</div>
+
+<!-- EXPENSE -->
+<div class="section" id="sec-expense">
+  <div class="form-top ft-out">
+    <div class="ft-icon fti-out">🧾</div>
+    <div class="ft-title">บันทึกรายจ่าย</div>
+    <div class="ft-sub">ค่าใช้จ่ายร้านครัวออยออย</div>
+  </div>
+  <div class="form-body">
+    <div class="fcard">
+      <div class="field-row">
+        <div class="field"><label>วันที่</label><input type="date" id="exp-date"></div>
+        <div class="field"><label>จำนวนเงิน (บาท)</label><input type="number" id="exp-amount" placeholder="0" min="0" step="1"></div>
+      </div>
+      <div class="field">
+        <label>หมวดหมู่</label>
+        <div class="chips" id="cat-chips">
+          <button class="chip sel" data-val="ค่าแรง"          onclick="selectChip(this,'cat-chips')">👷 ค่าแรง</button>
+          <button class="chip"     data-val="ตลาดสะพานใหม่"   onclick="selectChip(this,'cat-chips')">🛒 สะพานใหม่</button>
+          <button class="chip"     data-val="ตลาดโพธิ์สุวรรณ" onclick="selectChip(this,'cat-chips')">🛒 โพธิ์สุวรรณ</button>
+          <button class="chip"     data-val="เซเว่น"           onclick="selectChip(this,'cat-chips')">🏪 เซเว่น</button>
+          <button class="chip"     data-val="แมคโคร"           onclick="selectChip(this,'cat-chips')">🏬 แมคโคร</button>
+          <button class="chip"     data-val="อื่นๆ"            onclick="selectChip(this,'cat-chips')">📦 อื่นๆ</button>
+        </div>
+      </div>
+      <div class="field"><label>หมายเหตุ</label><input type="text" id="exp-note" placeholder="เช่น ซื้อผัก หมู ไก่"></div>
+      <div style="height:12px"></div>
+      <button class="btn-sub bs-out" onclick="submitExpense()">− บันทึกรายจ่าย</button>
+    </div>
+  </div>
+  <div class="spacer"></div>
+</div>
+
+<!-- HISTORY -->
+<div class="section" id="sec-history">
+  <div class="body-pad">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="setHistTab('all',this)">ทั้งหมด</button>
+      <button class="tab-btn"        onclick="setHistTab('income',this)">รายรับ</button>
+      <button class="tab-btn"        onclick="setHistTab('expense',this)">รายจ่าย</button>
+    </div>
+    <div id="history-list"><div class="loading">กำลังโหลด...</div></div>
+  </div>
+  <div class="spacer"></div>
+</div>
+
+<!-- COMPARE -->
+<div class="section" id="sec-compare">
+  <div class="body-pad">
+    <div class="card">
+      <div class="card-ttl">เปรียบเทียบ 7 วันล่าสุด</div>
+      <div class="legend">
+        <div class="leg"><div class="leg-dot" style="background:var(--green)"></div>รายรับ</div>
+        <div class="leg"><div class="leg-dot" style="background:var(--red)"></div>รายจ่าย</div>
+      </div>
+      <div class="chart-wrap h220"><canvas id="cmpChart" role="img" aria-label="เปรียบเทียบ 7 วัน">เปรียบเทียบ</canvas></div>
+    </div>
+  </div>
+  <div class="cmp-grid" id="compare-cards"></div>
+  <div class="spacer"></div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bnav">
+  <button class="ni active" onclick="switchTab('dashboard',this)">
+    <div class="ni-icon">📊</div><div class="ni-lbl">ภาพรวม</div>
+  </button>
+  <button class="ni" onclick="switchTab('income',this)">
+    <div class="ni-icon">💰</div><div class="ni-lbl">รายรับ</div>
+  </button>
+  <button class="ni" onclick="switchTab('expense',this)">
+    <div class="ni-icon">🧾</div><div class="ni-lbl">รายจ่าย</div>
+  </button>
+  <button class="ni" onclick="switchTab('history',this)">
+    <div class="ni-icon">📋</div><div class="ni-lbl">ประวัติ</div>
+  </button>
+  <button class="ni" onclick="switchTab('compare',this)">
+    <div class="ni-icon">📈</div><div class="ni-lbl">เปรียบเทียบ</div>
+  </button>
+</nav>
+</div><!-- /app -->
 
 <div id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
-// ─── CONFIG ───────────────────────────────────
-const CATS = ['ค่าแรง','ตลาดสะพานใหม่','ตลาดโพธิ์สุวรรณ','เซเว่น','แมคโคร','อื่นๆ'];
-const CAT_COLORS = ['#92400e','#2d6a4f','#3B6D11','#1a4e8f','#c8622a','#6b6560'];
-const CAT_ICONS  = { 'ค่าแรง':'👷','ตลาดสะพานใหม่':'🛒','ตลาดโพธิ์สุวรรณ':'🛒','เซเว่น':'🏪','แมคโคร':'🏬','อื่นๆ':'📦' };
+// ── CONSTANTS ──
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyXgn9gMBm6yju1zqScIh2g_jOHA6XxYiCFdkovSSALZSO8mHwPrF4imTDLKqSA72MUMQ/exec';
+const SHEET_URL  = 'https://docs.google.com/spreadsheets/d/1xtU-oF4ggCD5kuXiyaS9S5KD-IYor6JxIja7VoSCRjs/edit';
+const CATS       = ['ค่าแรง','ตลาดสะพานใหม่','ตลาดโพธิ์สุวรรณ','เซเว่น','แมคโคร','อื่นๆ'];
+const CAT_COLORS = ['#d4881a','#2ea87a','#3ab87a','#5090e0','#e8641a','#7a6a55'];
+const CAT_ICONS  = {'ค่าแรง':'👷','ตลาดสะพานใหม่':'🛒','ตลาดโพธิ์สุวรรณ':'🛒','เซเว่น':'🏪','แมคโคร':'🏬','อื่นๆ':'📦'};
 
-let SCRIPT_URL = '';
-const TARGET_SHEET_ID = '1xtU-oF4ggCD5kuXiyaS9S5KD-IYor6JxIja7VoSCRjs';
-
-let offlineMode = false;
-let offlineEntries = [];
+// ── STATE ──
 let currentDay = todayStr();
-let historyTab = 'all';
+let histTab    = 'all';
 let dashChart, catChart, cmpChart;
-let loadedEntries = null;
+let lastEntries = [];
 
-// ฟังก์ชันสร้างข้อมูลจำลองเพื่อให้แอปไม่พังเวลาโหลด Backend ไม่ได้
-function getDemoData() {
-  const today = todayStr();
-  return [
-    { id:1, type:'income', date:today, amount:2500, note:'ขายเที่ยง', payType:'cash' },
-    { id:2, type:'income', date:today, amount:800, note:'สั่งออนไลน์', payType:'transfer' },
-    { id:3, type:'expense', date:today, amount:600, note:'ผัก หมู', cat:'ตลาดสะพานใหม่' },
-    { id:4, type:'expense', date:today, amount:1200, note:'ค่าจ้างน้อง', cat:'ค่าแรง' },
-    { id:5, type:'expense', date:today, amount:320, note:'น้ำปลา ซีอิ๊ว', cat:'แมคโคร' },
-  ];
+// ── BOOT ──
+document.getElementById('inc-date').value = todayStr();
+document.getElementById('exp-date').value = todayStr();
+renderDashboard();
+
+// ── HELPERS ──
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function thaiDate(s){
+  if(!s)return'';
+  return new Date(s+'T00:00:00').toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'2-digit'});
+}
+function fmt(n){ return '฿'+Math.round(n).toLocaleString('th-TH'); }
+function showToast(msg,type){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='show '+(type||'');
+  setTimeout(()=>t.className='',2600);
 }
 
-// ─── INIT ──────────────────────────────────────
-(function init() {
-  SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzpNERUEOtBH1E4vB4d4QBE5TPqLqkPsvzVN-aGGqSQ/exec';
-  
-  document.getElementById('inc-date').value = todayStr();
-  document.getElementById('exp-date').value = todayStr();
-  document.getElementById('hdr-date').textContent = thaiDate(todayStr());
-  startApp();
-})();
+// ── SHEET / EXCEL ──
+function openSheet(){ window.open(SHEET_URL,'_blank'); }
 
-function startApp() {
-  document.getElementById('app').style.display = 'block';
-  renderDashboard();
-}
+async function downloadExcel(){
+  showToast('กำลังโหลดข้อมูล...','');
+  try{
+    const res = await apiCall('getEntries',{});
+    const entries = res.entries || [];
+    if(entries.length===0){ showToast('ไม่มีข้อมูล','error'); return; }
 
-// ─── HELPERS ──────────────────────────────────
-function todayStr() {
-  return new Date().toISOString().slice(0,10);
-}
-
-function thaiDate(str) {
-  if (!str) return '';
-  const d = new Date(str + 'T00:00:00');
-  return d.toLocaleDateString('th-TH', {day:'numeric', month:'short', year:'2-digit'});
-}
-
-function fmt(n) {
-  n = Math.round(n);
-  return '฿' + n.toLocaleString('th-TH');
-}
-
-function showToast(msg, type) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = 'show ' + (type || '');
-  setTimeout(() => t.className = '', 3000);
-}
-
-// ─── API CALLS ────────────────────────────────
-async function apiCall(action, params) {
-  if (offlineMode) return handleOffline(action, params);
-  try {
-    const url = new URL(SCRIPT_URL);
-    url.searchParams.set('action', action);
-    url.searchParams.set('sheetId', TARGET_SHEET_ID);
-    
-    Object.entries(params || {}).forEach(([k,v]) => url.searchParams.set(k, v));
-    
-    const resp = await fetch(url.toString(), { 
-        method: 'GET',
-        redirect: 'follow' 
+    // Sheet 1: รายการทั้งหมด
+    const allData = [
+      ['วันที่','ประเภท','จำนวนเงิน','หมายเหตุ','ประเภทรับเงิน','หมวดหมู่','วันที่บันทึก']
+    ];
+    entries.sort((a,b)=>a.date.localeCompare(b.date)).forEach(e=>{
+      allData.push([
+        e.date,
+        e.type==='income'?'รายรับ':'รายจ่าย',
+        Number(e.amount),
+        e.note||'',
+        e.payType||'',
+        e.cat||'',
+        e.createdAt||''
+      ]);
     });
 
-    if (!resp.ok) {
-        throw new Error(`การตอบสนองผิดพลาด (${resp.status})`);
-    }
-
-    const data = await resp.json();
-    if (data.error) {
-        throw new Error(data.error); 
-    }
-    return data;
-    
-  } catch(e) {
-    // ลบการแสดงผล console.error ออกไปเพื่อไม่ให้ระบบเตือนว่าเป็นโค้ดเสียร้ายแรง
-    console.warn("API ไม่พร้อมใช้งาน สลับเข้าสู่โหมดออฟไลน์:", e.message);
-    
-    // ดักจับ Error ไว้เงียบๆ และสลับเป็นออฟไลน์เพื่อไม่ให้หน้าจอพัง
-    if (!offlineMode) {
-       offlineMode = true;
-       document.getElementById('offline-badge').style.display = 'inline-block';
-       
-       if (offlineEntries.length === 0) {
-           offlineEntries = getDemoData();
-       }
-       showToast('ออฟไลน์: ไม่สามารถเชื่อมต่อฐานข้อมูลได้', 'error');
-    }
-    // คืนค่าฟังก์ชันจำลองโดยไม่โยน (throw) Error เพื่อให้แอปทำงานต่อได้ไหลลื่น
-    return handleOffline(action, params);
-  }
-}
-
-function handleOffline(action, params) {
-  if (action === 'getEntries') {
-    const list = params.date ? offlineEntries.filter(e => e.date === params.date) : offlineEntries;
-    return { entries: list };
-  }
-  if (action === 'addEntry') {
-    const entry = { ...params, id: Date.now() };
-    offlineEntries.push(entry);
-    return { success: true, id: entry.id };
-  }
-  if (action === 'deleteEntry') {
-    offlineEntries = offlineEntries.filter(e => e.id.toString() !== params.id.toString());
-    return { success: true };
-  }
-  if (action === 'getSummary') {
-    const n = parseInt(params.days) || 7;
-    const days = getLast7Days(n);
-    const summary = days.map(day => {
-      const de = offlineEntries.filter(e => e.date === day);
-      return calcFromEntries(day, de);
+    // Sheet 2: สรุปรายวัน
+    const dayMap={};
+    entries.forEach(e=>{
+      if(!dayMap[e.date]) dayMap[e.date]={income:0,expense:0,cash:0,transfer:0,labor:0};
+      const d=dayMap[e.date];
+      if(e.type==='income'){
+        d.income+=Number(e.amount);
+        if(e.payType==='cash') d.cash+=Number(e.amount);
+        if(e.payType==='transfer') d.transfer+=Number(e.amount);
+      } else {
+        d.expense+=Number(e.amount);
+        if(e.cat==='ค่าแรง') d.labor+=Number(e.amount);
+      }
     });
-    return { summary };
-  }
+    const sumData=[['วันที่','รายรับ','รายจ่าย','กำไร','เงินสด','เงินโอน','ค่าแรง']];
+    Object.keys(dayMap).sort().forEach(day=>{
+      const d=dayMap[day];
+      sumData.push([day,d.income,d.expense,d.income-d.expense,d.cash,d.transfer,d.labor]);
+    });
+
+    const wb = XLSX.utils.book_new();
+    const ws1 = XLSX.utils.aoa_to_sheet(allData);
+    const ws2 = XLSX.utils.aoa_to_sheet(sumData);
+
+    // Column widths
+    ws1['!cols']=[{wch:12},{wch:8},{wch:12},{wch:20},{wch:10},{wch:18},{wch:22}];
+    ws2['!cols']=[{wch:12},{wch:12},{wch:12},{wch:12},{wch:12},{wch:12},{wch:12}];
+
+    XLSX.utils.book_append_sheet(wb,ws1,'รายการทั้งหมด');
+    XLSX.utils.book_append_sheet(wb,ws2,'สรุปรายวัน');
+
+    const month = new Date().toLocaleDateString('th-TH',{month:'long',year:'2-digit'});
+    XLSX.writeFile(wb,`ครัวออยออย_${month}.xlsx`);
+    showToast('ดาวน์โหลด Excel แล้ว ✓','success');
+  }catch(e){ showToast('โหลดไม่ได้: '+e.message,'error'); }
 }
 
-// ─── CALC ─────────────────────────────────────
-function calcFromEntries(day, ents) {
-  const income = ents.filter(e=>e.type==='income').reduce((s,e)=>s+Number(e.amount),0);
-  const expense = ents.filter(e=>e.type==='expense').reduce((s,e)=>s+Number(e.amount),0);
-  const cash = ents.filter(e=>e.type==='income'&&e.payType==='cash').reduce((s,e)=>s+Number(e.amount),0);
-  const transfer = ents.filter(e=>e.type==='income'&&e.payType==='transfer').reduce((s,e)=>s+Number(e.amount),0);
-  const labor = ents.filter(e=>e.type==='expense'&&e.cat==='ค่าแรง').reduce((s,e)=>s+Number(e.amount),0);
-  const catTotals = {};
-  CATS.forEach(c => { catTotals[c] = ents.filter(e=>e.type==='expense'&&e.cat===c).reduce((s,e)=>s+Number(e.amount),0); });
-  return { date:day, income, expense, cash, transfer, labor, net:income-expense, catTotals };
+// ── API ──
+async function apiCall(action,params){
+  const url=new URL(SCRIPT_URL);
+  url.searchParams.set('action',action);
+  Object.entries(params||{}).forEach(([k,v])=>url.searchParams.set(k,v));
+  const r=await fetch(url.toString(),{redirect:'follow'});
+  return await r.json();
 }
 
-function getLast7Days(n) {
-  n = n || 7;
-  const days = [];
-  for (let i = n-1; i >= 0; i--) {
-    const d = new Date(); d.setDate(d.getDate() - i);
-    days.push(d.toISOString().slice(0,10));
-  }
+// ── CALC ──
+function calc(day,ents){
+  const s=fn=>ents.filter(fn).reduce((a,e)=>a+Number(e.amount),0);
+  const income  =s(e=>e.type==='income');
+  const expense =s(e=>e.type==='expense');
+  const cash    =s(e=>e.type==='income'&&e.payType==='cash');
+  const transfer=s(e=>e.type==='income'&&e.payType==='transfer');
+  const labor   =s(e=>e.type==='expense'&&e.cat==='ค่าแรง');
+  const catTotals={};
+  CATS.forEach(c=>{catTotals[c]=s(e=>e.type==='expense'&&e.cat===c);});
+  return{date:day,income,expense,cash,transfer,labor,net:income-expense,catTotals,count:ents.length};
+}
+
+function last7(n){
+  n=n||7;const days=[];
+  for(let i=n-1;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);days.push(d.toISOString().slice(0,10));}
   return days;
 }
 
-// ─── DASHBOARD ────────────────────────────────
-async function renderDashboard() {
-  document.getElementById('dash-date-label').textContent = thaiDate(currentDay);
-  document.getElementById('today-chip').style.display = currentDay === todayStr() ? 'inline-flex' : 'none';
+// ── DASHBOARD ──
+async function renderDashboard(){
+  const lbl=document.getElementById('dash-date-label');
+  const isToday=currentDay===todayStr();
+  lbl.innerHTML=thaiDate(currentDay)+(isToday?'<span class="today-tag">วันนี้</span>':'');
 
-  try {
-    const res = await apiCall('getEntries', { date: currentDay });
-    loadedEntries = res.entries || [];
-    const d = calcFromEntries(currentDay, loadedEntries);
+  try{
+    const res=await apiCall('getEntries',{date:currentDay});
+    const ents=res.entries||[];
+    lastEntries=ents;
+    const d=calc(currentDay,ents);
 
-    document.getElementById('m-income').textContent = fmt(d.income);
-    document.getElementById('m-cash').textContent = fmt(d.cash);
-    document.getElementById('m-transfer').textContent = fmt(d.transfer);
-    document.getElementById('m-expense').textContent = fmt(d.expense);
-    document.getElementById('m-labor').textContent = fmt(d.labor);
-    const netEl = document.getElementById('m-net');
-    netEl.textContent = fmt(d.net);
-    netEl.className = 'metric-value ' + (d.net >= 0 ? 'green' : 'red');
+    document.getElementById('m-income').textContent   =fmt(d.income);
+    document.getElementById('m-cash').textContent     =fmt(d.cash);
+    document.getElementById('m-transfer').textContent =fmt(d.transfer);
+    document.getElementById('m-expense').textContent  =fmt(d.expense);
+    document.getElementById('m-labor').textContent    =fmt(d.labor);
+    document.getElementById('m-count').textContent    =d.count;
+    const ne=document.getElementById('m-net');
+    ne.textContent=fmt(d.net);
+    ne.className='hero-val '+(d.net>0?'pos':d.net<0?'neg':'');
 
-    // Bar chart
-    if (dashChart) dashChart.destroy();
-    dashChart = new Chart(document.getElementById('dashChart'), {
+    // Bar
+    if(dashChart)dashChart.destroy();
+    dashChart=new Chart(document.getElementById('dashChart'),{
       type:'bar',
       data:{
         labels:['รายรับ','รายจ่าย','กำไร'],
-        datasets:[{ data:[d.income,d.expense,Math.max(0,d.net)], backgroundColor:['#2d6a4f','#9b2335','#1a4e8f'], borderRadius:6, borderSkipped:false }]
+        datasets:[{
+          data:[d.income,d.expense,Math.max(0,d.net)],
+          backgroundColor:['rgba(46,168,122,0.85)','rgba(224,80,96,0.85)','rgba(80,144,224,0.85)'],
+          borderRadius:8,borderSkipped:false
+        }]
       },
       options:{
-        responsive:true, maintainAspectRatio:false,
-        plugins:{ legend:{ display:false } },
-        scales:{ y:{ beginAtZero:true, ticks:{ callback:v=>'฿'+Math.round(v).toLocaleString('th-TH'), font:{ size:11 } } }, x:{ ticks:{ font:{ size:12 } } } }
+        responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false}},
+        scales:{
+          y:{beginAtZero:true,grid:{color:'rgba(255,200,120,0.05)'},
+             ticks:{color:'#7a6a55',callback:v=>'฿'+Math.round(v).toLocaleString('th-TH'),font:{size:10}}},
+          x:{grid:{display:false},ticks:{color:'#b8a48a',font:{size:12,family:'Mitr'}}}
+        }
       }
     });
 
-    // Donut chart
-    const catVals = CATS.map(c => d.catTotals[c] || 0);
-    if (catChart) catChart.destroy();
-    if (catVals.some(v=>v>0)) {
-      catChart = new Chart(document.getElementById('catChart'), {
+    // Donut
+    if(catChart)catChart.destroy();
+    const cv=CATS.map(c=>d.catTotals[c]||0);
+    if(cv.some(v=>v>0)){
+      catChart=new Chart(document.getElementById('catChart'),{
         type:'doughnut',
-        data:{ labels:CATS, datasets:[{ data:catVals, backgroundColor:CAT_COLORS, borderWidth:2, borderColor:'#fff' }] },
+        data:{labels:CATS,datasets:[{data:cv,backgroundColor:CAT_COLORS,borderWidth:3,borderColor:'#1a1612'}]},
         options:{
-          responsive:true, maintainAspectRatio:false,
-          plugins:{ legend:{ display:true, position:'right', labels:{ font:{ size:11 }, boxWidth:12, padding:8 } } }
+          responsive:true,maintainAspectRatio:false,
+          plugins:{legend:{display:true,position:'right',labels:{color:'#b8a48a',font:{size:11,family:'Sarabun'},boxWidth:11,padding:8}}}
         }
       });
     }
 
-    // Recent list
-    const recent = loadedEntries.slice(-6).reverse();
-    const rl = document.getElementById('recent-list');
-    if (recent.length === 0) {
-      rl.innerHTML = '<div class="empty"><div class="empty-icon">📝</div><div class="empty-text">ยังไม่มีรายการวันนี้</div></div>';
-    } else {
-      rl.innerHTML = '<div class="entry-list">' + recent.map(entryHTML).join('') + '</div>';
-    }
-  } catch(err) {
-    showToast(err.message, 'error');
-    // หากพัง จะแสดงข้อความโหลดไม่สำเร็จในรายการ
-    document.getElementById('recent-list').innerHTML = `<div class="empty"><div class="empty-text" style="color:var(--red)">${err.message}</div></div>`;
-  }
+    // Recent
+    const rec=[...ents].slice(-6).reverse();
+    document.getElementById('recent-list').innerHTML=rec.length===0
+      ?'<div class="empty"><div class="empty-icon">🍳</div><div class="empty-text">ยังไม่มีรายการวันนี้</div></div>'
+      :'<div class="entry-list">'+rec.map(eHTML).join('')+'</div>';
+
+  }catch(err){showToast(err.message,'error');}
 }
 
-function changeDay(d) {
-  const dt = new Date(currentDay + 'T00:00:00');
-  dt.setDate(dt.getDate() + d);
-  currentDay = dt.toISOString().slice(0,10);
-  loadedEntries = null;
-  renderDashboard();
+function changeDay(d){
+  const dt=new Date(currentDay+'T00:00:00');dt.setDate(dt.getDate()+d);
+  currentDay=dt.toISOString().slice(0,10);renderDashboard();
 }
 
-// ─── ENTRY HTML ───────────────────────────────
-function entryHTML(e) {
-  const isInc = e.type === 'income';
-  let badge = '';
-  if (isInc) {
-    badge = e.payType === 'cash'
-      ? '<span class="badge badge-cash">สด</span>'
-      : '<span class="badge badge-transfer">โอน</span>';
+// ── ENTRY HTML ──
+function eHTML(e){
+  const isInc=e.type==='income';
+  const icon=isInc?'💰':(CAT_ICONS[e.cat]||'📦');
+  let badge='';
+  if(isInc){
+    badge=e.payType==='cash'?'<span class="badge bc">สด</span>':'<span class="badge bt">โอน</span>';
   } else {
-    const catClass = e.cat === 'ค่าแรง' ? 'badge-labor' : e.cat && e.cat.includes('ตลาด') ? 'badge-market' : 'badge-other';
-    badge = `<span class="badge ${catClass}">${e.cat || ''}</span>`;
+    const bc=e.cat==='ค่าแรง'?'bl':e.cat&&e.cat.includes('ตลาด')?'bm':'bo';
+    badge=`<span class="badge ${bc}">${e.cat||''}</span>`;
   }
-  const icon = isInc ? '💰' : (CAT_ICONS[e.cat] || '📦');
-  return `<div class="entry-item">
-    <div class="entry-left">
-      <div class="entry-icon ${isInc ? 'icon-income' : 'icon-expense'}">${icon}</div>
+  return`<div class="entry">
+    <div class="entry-l">
+      <div class="entry-icon ${isInc?'ei-in':'ei-out'}">${icon}</div>
       <div class="entry-body">
-        <div class="entry-name">${e.note || (isInc ? 'รายรับ' : 'รายจ่าย')} ${badge}</div>
-        <div class="entry-meta">${thaiDate(e.date)}</div>
+        <div class="entry-name">${e.note||(isInc?'รายรับ':'รายจ่าย')}</div>
+        <div class="entry-sub">${badge}<span>${thaiDate(e.date)}</span></div>
       </div>
     </div>
-    <div class="entry-right">
-      <div class="entry-amount ${isInc ? 'amount-in' : 'amount-out'}">${isInc ? '+' : '−'}${fmt(e.amount)}</div>
-      <button class="del-btn" onclick="deleteEntry('${e.id}')">✕</button>
+    <div class="entry-r">
+      <div class="entry-amt ${isInc?'ain':'aout'}">${isInc?'+':'−'}${fmt(e.amount)}</div>
+      <button class="del" onclick="deleteEntry('${e.id}')">✕</button>
     </div>
   </div>`;
 }
 
-// ─── FORMS ────────────────────────────────────
-function selectChip(el, groupId) {
-  const grp = document.getElementById(groupId);
-  grp.querySelectorAll('.chip').forEach(c => {
-    c.className = 'chip';
-  });
-  // assign class based on val
-  const val = el.dataset.val;
-  if (val === 'cash') el.classList.add('sel-cash');
-  else if (val === 'transfer') el.classList.add('sel-transfer');
-  else if (val === 'ค่าแรง') el.classList.add('sel-labor');
-  else if (val.includes('ตลาด') || val === 'เซเว่น' || val === 'แมคโคร') el.classList.add('sel-market');
-  else el.classList.add('sel-other');
+// ── CHIPS ──
+function selectChip(el,gid){
+  document.querySelectorAll('#'+gid+' .chip').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel');
+}
+function getChip(gid){
+  const s=document.querySelector('#'+gid+' .chip.sel');return s?s.dataset.val:null;
 }
 
-function getSelectedChip(groupId) {
-  const s = document.querySelector('#' + groupId + ' .chip.sel-cash, #' + groupId + ' .chip.sel-transfer, #' + groupId + ' .chip.sel-labor, #' + groupId + ' .chip.sel-market, #' + groupId + ' .chip.sel-other');
-  return s ? s.dataset.val : null;
+// ── FORMS ──
+async function submitIncome(){
+  const date=document.getElementById('inc-date').value;
+  const amount=parseFloat(document.getElementById('inc-amount').value);
+  const note=document.getElementById('inc-note').value.trim();
+  const payType=getChip('pay-chips');
+  if(!date||!amount||amount<=0){showToast('กรุณากรอกวันที่และจำนวนเงิน','error');return;}
+  const btn=document.querySelector('#sec-income .btn-sub');
+  btn.disabled=true;btn.textContent='กำลังบันทึก...';
+  try{
+    await apiCall('addEntry',{type:'income',date,amount,note,payType});
+    document.getElementById('inc-amount').value='';
+    document.getElementById('inc-note').value='';
+    showToast('บันทึกรายรับเรียบร้อย ✓','success');
+    if(date===currentDay)renderDashboard();
+  }catch(e){showToast(e.message,'error');}
+  btn.disabled=false;btn.textContent='+ บันทึกรายรับ';
 }
 
-async function submitIncome() {
-  const date = document.getElementById('inc-date').value;
-  const amount = parseFloat(document.getElementById('inc-amount').value);
-  const note = document.getElementById('inc-note').value.trim();
-  const payType = getSelectedChip('pay-chips');
-  if (!date || !amount || amount <= 0) { showToast('กรุณากรอกวันที่และจำนวนเงิน', 'error'); return; }
-  const btn = document.querySelector('#sec-income .btn-submit');
-  btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
-  try {
-    await apiCall('addEntry', { type:'income', date, amount, note, payType });
-    document.getElementById('inc-amount').value = '';
-    document.getElementById('inc-note').value = '';
-    showToast('บันทึกรายรับเรียบร้อย ✓', 'success');
-    if (date === currentDay) renderDashboard();
-  } catch(e) { showToast(e.message, 'error'); }
-  btn.disabled = false; btn.textContent = 'บันทึกรายรับ';
+async function submitExpense(){
+  const date=document.getElementById('exp-date').value;
+  const amount=parseFloat(document.getElementById('exp-amount').value);
+  const note=document.getElementById('exp-note').value.trim();
+  const cat=getChip('cat-chips');
+  if(!date||!amount||amount<=0){showToast('กรุณากรอกวันที่และจำนวนเงิน','error');return;}
+  const btn=document.querySelector('#sec-expense .btn-sub');
+  btn.disabled=true;btn.textContent='กำลังบันทึก...';
+  try{
+    await apiCall('addEntry',{type:'expense',date,amount,note,cat});
+    document.getElementById('exp-amount').value='';
+    document.getElementById('exp-note').value='';
+    showToast('บันทึกรายจ่ายเรียบร้อย ✓','success');
+    if(date===currentDay)renderDashboard();
+  }catch(e){showToast(e.message,'error');}
+  btn.disabled=false;btn.textContent='− บันทึกรายจ่าย';
 }
 
-async function submitExpense() {
-  const date = document.getElementById('exp-date').value;
-  const amount = parseFloat(document.getElementById('exp-amount').value);
-  const note = document.getElementById('exp-note').value.trim();
-  const cat = getSelectedChip('cat-chips');
-  if (!date || !amount || amount <= 0) { showToast('กรุณากรอกวันที่และจำนวนเงิน', 'error'); return; }
-  const btn = document.querySelector('#sec-expense .btn-submit');
-  btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
-  try {
-    await apiCall('addEntry', { type:'expense', date, amount, note, cat });
-    document.getElementById('exp-amount').value = '';
-    document.getElementById('exp-note').value = '';
-    showToast('บันทึกรายจ่ายเรียบร้อย ✓', 'success');
-    if (date === currentDay) renderDashboard();
-  } catch(e) { showToast(e.message, 'error'); }
-  btn.disabled = false; btn.textContent = 'บันทึกรายจ่าย';
-}
-
-async function deleteEntry(id) {
-  if (!confirm('ลบรายการนี้?')) return;
-  try {
-    await apiCall('deleteEntry', { id });
-    showToast('ลบแล้ว', '');
+async function deleteEntry(id){
+  if(!confirm('ลบรายการนี้?'))return;
+  try{
+    await apiCall('deleteEntry',{id});
+    showToast('ลบแล้ว','');
     renderDashboard();
-    if (document.getElementById('sec-history').classList.contains('active')) renderHistory();
-  } catch(e) { showToast(e.message, 'error'); }
+    if(document.getElementById('sec-history').classList.contains('active'))renderHistory();
+  }catch(e){showToast(e.message,'error');}
 }
 
-// ─── HISTORY ──────────────────────────────────
-function setHistoryTab(tab, el) {
-  historyTab = tab;
-  document.querySelectorAll('#sec-history .tab-btn').forEach(b => b.classList.remove('active'));
-  el.classList.add('active');
-  renderHistory();
+// ── HISTORY ──
+function setHistTab(tab,el){
+  histTab=tab;
+  document.querySelectorAll('#sec-history .tab-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');renderHistory();
 }
 
-async function renderHistory() {
-  const el = document.getElementById('history-list');
-  el.innerHTML = '<div class="loading">กำลังโหลด...</div>';
-  try {
-    const res = await apiCall('getEntries', {});
-    let list = (res.entries || []).sort((a,b) => b.date.localeCompare(a.date) || b.id - a.id);
-    if (historyTab === 'income') list = list.filter(e => e.type === 'income');
-    if (historyTab === 'expense') list = list.filter(e => e.type === 'expense');
-    if (list.length === 0) {
-      el.innerHTML = '<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">ยังไม่มีรายการ</div></div>';
-    } else {
-      el.innerHTML = '<div class="entry-list">' + list.map(entryHTML).join('') + '</div>';
-    }
-  } catch(e) { el.innerHTML = '<div class="empty"><div class="empty-text" style="color:var(--red)">โหลดไม่ได้: ' + e.message + '</div></div>'; }
+async function renderHistory(){
+  const el=document.getElementById('history-list');
+  el.innerHTML='<div class="loading">กำลังโหลด...</div>';
+  try{
+    const res=await apiCall('getEntries',{});
+    let list=(res.entries||[]).sort((a,b)=>b.date.localeCompare(a.date)||Number(b.id)-Number(a.id));
+    if(histTab==='income') list=list.filter(e=>e.type==='income');
+    if(histTab==='expense')list=list.filter(e=>e.type==='expense');
+    el.innerHTML=list.length===0
+      ?'<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">ยังไม่มีรายการ</div></div>'
+      :'<div class="entry-list">'+list.map(eHTML).join('')+'</div>';
+  }catch(e){
+    el.innerHTML='<div class="empty"><div class="empty-text">โหลดไม่ได้: '+e.message+'</div></div>';
+  }
 }
 
-// ─── COMPARE ──────────────────────────────────
-async function renderCompare() {
-  try {
-    const res = await apiCall('getSummary', { days: 7 });
-    const summary = res.summary || [];
-    const labels = summary.map(d => thaiDate(d.date));
-    const incomes = summary.map(d => Math.round(d.income));
-    const expenses = summary.map(d => Math.round(d.expense));
-
-    if (cmpChart) cmpChart.destroy();
-    cmpChart = new Chart(document.getElementById('cmpChart'), {
+// ── COMPARE ──
+async function renderCompare(){
+  try{
+    const res=await apiCall('getSummary',{days:7});
+    const summary=res.summary||[];
+    if(cmpChart)cmpChart.destroy();
+    cmpChart=new Chart(document.getElementById('cmpChart'),{
       type:'bar',
       data:{
-        labels,
+        labels:summary.map(d=>thaiDate(d.date)),
         datasets:[
-          { label:'รายรับ', data:incomes, backgroundColor:'#2d6a4f', borderRadius:4 },
-          { label:'รายจ่าย', data:expenses, backgroundColor:'#9b2335', borderRadius:4 }
+          {label:'รายรับ', data:summary.map(d=>Math.round(d.income)), backgroundColor:'rgba(46,168,122,0.8)',borderRadius:5},
+          {label:'รายจ่าย',data:summary.map(d=>Math.round(d.expense)),backgroundColor:'rgba(224,80,96,0.8)', borderRadius:5}
         ]
       },
       options:{
-        responsive:true, maintainAspectRatio:false,
-        plugins:{ legend:{ display:false } },
+        responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false}},
         scales:{
-          y:{ beginAtZero:true, ticks:{ callback:v=>'฿'+Math.round(v).toLocaleString('th-TH'), font:{ size:11 } } },
-          x:{ ticks:{ font:{ size:10 }, maxRotation:30 } }
+          y:{beginAtZero:true,grid:{color:'rgba(255,200,120,0.05)'},
+             ticks:{color:'#7a6a55',callback:v=>'฿'+Math.round(v).toLocaleString('th-TH'),font:{size:10}}},
+          x:{grid:{display:false},ticks:{color:'#b8a48a',font:{size:10},maxRotation:30}}
         }
       }
     });
 
-    const cards = document.getElementById('compare-cards');
-    cards.innerHTML = summary.slice(-4).map(d => {
-      const netClass = d.net >= 0 ? 'amount-in' : 'amount-out';
-      const isToday = d.date === todayStr();
-      return `<div class="compare-card" style="${isToday ? 'border:1.5px solid var(--accent);' : ''}">
-        <div class="compare-date">${thaiDate(d.date)}${isToday ? ' 📍' : ''}</div>
-        <div class="compare-row"><span class="compare-key">รายรับ</span><span style="color:var(--green);font-weight:500;">${fmt(d.income)}</span></div>
-        <div class="compare-row"><span class="compare-key">รายจ่าย</span><span style="color:var(--red);">${fmt(d.expense)}</span></div>
-        <div class="compare-row"><span class="compare-key">กำไร</span><span class="${netClass}" style="font-weight:500;">${fmt(d.net)}</span></div>
+    document.getElementById('compare-cards').innerHTML=summary.slice(-4).map(d=>{
+      const isTd=d.date===todayStr();
+      const nc=d.net>=0?'ain':'aout';
+      return`<div class="cmp-card ${isTd?'today':''}">
+        <div class="cmp-date">${thaiDate(d.date)}${isTd?' 📍':''}</div>
+        <div class="cmp-row"><span class="cmp-key">รายรับ</span><span style="color:var(--green);font-weight:500">${fmt(d.income)}</span></div>
+        <div class="cmp-row"><span class="cmp-key">รายจ่าย</span><span style="color:var(--red)">${fmt(d.expense)}</span></div>
+        <div class="cmp-row"><span class="cmp-key">กำไร</span><span class="${nc}" style="font-weight:500">${fmt(d.net)}</span></div>
       </div>`;
     }).join('');
-  } catch(e) { showToast(e.message, 'error'); }
+  }catch(e){showToast(e.message,'error');}
 }
 
-// ─── TAB SWITCHING ────────────────────────────
-function switchTab(tab, el) {
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
-  document.getElementById('sec-' + tab).classList.add('active');
+// ── NAV ──
+function switchTab(tab,el){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.ni').forEach(b=>b.classList.remove('active'));
+  document.getElementById('sec-'+tab).classList.add('active');
   el.classList.add('active');
-  if (tab === 'dashboard') renderDashboard();
-  if (tab === 'history') renderHistory();
-  if (tab === 'compare') renderCompare();
+  if(tab==='dashboard')renderDashboard();
+  if(tab==='history')  renderHistory();
+  if(tab==='compare')  renderCompare();
 }
 </script>
 </body>
