@@ -56,18 +56,18 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);fon
 .hdr-actions{display:flex;gap:8px;align-items:center}
 .hdr-btn{
   display:flex;align-items:center;gap:5px;
-  padding:6px 12px;border-radius:20px;
-  border:1px solid var(--border2);
-  background:var(--surface2);
-  color:var(--text2);font-size:12px;font-weight:500;
+  padding:7px 14px;border-radius:20px;
+  border:1.5px solid rgba(255,255,255,0.15);
+  background:rgba(255,255,255,0.08);
+  color:#fff;font-size:12px;font-weight:500;
   cursor:pointer;font-family:'Sarabun',sans-serif;
-  transition:all 0.15s;
+  transition:all 0.15s;white-space:nowrap;
 }
-.hdr-btn:hover{background:var(--surface3);color:var(--text);border-color:rgba(255,200,120,0.35)}
-.hdr-btn.green-btn{border-color:rgba(46,168,122,0.35);color:var(--green)}
-.hdr-btn.green-btn:hover{background:var(--green-dim)}
-.hdr-btn.sheet-btn{border-color:rgba(80,144,224,0.35);color:var(--blue)}
-.hdr-btn.sheet-btn:hover{background:var(--blue-dim)}
+.hdr-btn:hover{background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.3)}
+.hdr-btn.green-btn{border-color:rgba(46,168,122,0.5);background:rgba(46,168,122,0.15);color:#4dd9a0}
+.hdr-btn.green-btn:hover{background:rgba(46,168,122,0.28)}
+.hdr-btn.sheet-btn{border-color:rgba(80,144,224,0.5);background:rgba(80,144,224,0.15);color:#7ab4f0}
+.hdr-btn.sheet-btn:hover{background:rgba(80,144,224,0.28)}
 
 /* SECTIONS */
 .section{display:none}
@@ -323,7 +323,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);fon
 @media(max-width:420px){
   .metrics{grid-template-columns:repeat(2,1fr)}
   .hero-val{font-size:40px}
-  .hdr-btn span{display:none}
+  .hdr-btn .btn-label{display:none}
 }
 </style>
 </head>
@@ -340,10 +340,10 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);fon
   </div>
   <div class="hdr-actions">
     <button class="hdr-btn sheet-btn" onclick="openSheet()">
-      <span>📊</span><span>ดูชีท</span>
+      <span>📊</span><span class="btn-label">ดูชีท</span>
     </button>
     <button class="hdr-btn green-btn" onclick="downloadExcel()">
-      <span>⬇</span><span>Excel</span>
+      <span>⬇</span><span class="btn-label">Excel</span>
     </button>
   </div>
 </header>
