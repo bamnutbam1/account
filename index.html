@@ -4,6 +4,23 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>ครัวออยออย</title>
+
+<!-- PWA Manifest -->
+<link rel="manifest" href="manifest.json">
+
+<!-- Theme color (แถบสถานะ Android) -->
+<meta name="theme-color" content="#e8641a">
+
+<!-- Apple / iOS -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ครัวออยออย">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+
+<!-- Favicon -->
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
+
 <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500;600&family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -466,7 +483,6 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);fon
 <!-- COMPARE -->
 <div class="section" id="sec-compare">
   <div class="body-pad">
-    <!-- Filter chips -->
     <div style="margin-bottom:1rem;">
       <div style="font-size:11px;color:var(--text3);margin-bottom:8px;letter-spacing:0.05em;">ดูสรุปตาม</div>
       <div class="chips" id="cmp-chips" style="gap:6px;">
@@ -511,7 +527,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);fon
     <div class="ni-icon">📈</div><div class="ni-lbl">เปรียบเทียบ</div>
   </button>
 </nav>
-</div><!-- /app -->
+</div>
 
 <div id="toast"></div>
 
@@ -537,6 +553,15 @@ let lastEntries = [];
 document.getElementById('inc-date').value = todayStr();
 document.getElementById('exp-date').value = todayStr();
 renderDashboard();
+
+// Register Service Worker
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js')
+      .then(()=>console.log('SW registered'))
+      .catch(e=>console.log('SW error',e));
+  });
+}
 
 // ── HELPERS ──
 function todayStr(){
@@ -565,7 +590,6 @@ async function downloadExcel(){
     const entries = res.entries || [];
     if(entries.length===0){ showToast('ไม่มีข้อมูล','error'); return; }
 
-    // Sheet 1: รายการทั้งหมด
     const allData = [
       ['วันที่','ประเภท','จำนวนเงิน','หมายเหตุ','ประเภทรับเงิน','หมวดหมู่','วันที่บันทึก']
     ];
@@ -581,7 +605,6 @@ async function downloadExcel(){
       ]);
     });
 
-    // Sheet 2: สรุปรายวัน
     const dayMap={};
     entries.forEach(e=>{
       if(!dayMap[e.date]) dayMap[e.date]={income:0,expense:0,cash:0,transfer:0,labor:0};
@@ -604,14 +627,10 @@ async function downloadExcel(){
     const wb = XLSX.utils.book_new();
     const ws1 = XLSX.utils.aoa_to_sheet(allData);
     const ws2 = XLSX.utils.aoa_to_sheet(sumData);
-
-    // Column widths
     ws1['!cols']=[{wch:12},{wch:8},{wch:12},{wch:20},{wch:10},{wch:18},{wch:22}];
     ws2['!cols']=[{wch:12},{wch:12},{wch:12},{wch:12},{wch:12},{wch:12},{wch:12}];
-
     XLSX.utils.book_append_sheet(wb,ws1,'รายการทั้งหมด');
     XLSX.utils.book_append_sheet(wb,ws2,'สรุปรายวัน');
-
     const month = new Date().toLocaleDateString('th-TH',{month:'long',year:'2-digit'});
     XLSX.writeFile(wb,`ครัวออยออย_${month}.xlsx`);
     showToast('ดาวน์โหลด Excel แล้ว ✓','success');
@@ -668,7 +687,6 @@ async function renderDashboard(){
     ne.textContent=fmt(d.net);
     ne.className='hero-val '+(d.net>0?'pos':d.net<0?'neg':'');
 
-    // Bar
     if(dashChart)dashChart.destroy();
     dashChart=new Chart(document.getElementById('dashChart'),{
       type:'bar',
@@ -691,7 +709,6 @@ async function renderDashboard(){
       }
     });
 
-    // Donut
     if(catChart)catChart.destroy();
     const cv=CATS.map(c=>d.catTotals[c]||0);
     if(cv.some(v=>v>0)){
@@ -705,7 +722,6 @@ async function renderDashboard(){
       });
     }
 
-    // Recent
     const rec=[...ents].slice(-6).reverse();
     document.getElementById('recent-list').innerHTML=rec.length===0
       ?'<div class="empty"><div class="empty-icon">🍳</div><div class="empty-text">ยังไม่มีรายการวันนี้</div></div>'
@@ -824,7 +840,7 @@ async function renderHistory(){
   }
 }
 
-// ── COMPARE FILTER ──
+// ── COMPARE ──
 function setCmpFilter(el){
   document.querySelectorAll('#cmp-chips .chip').forEach(c=>c.classList.remove('sel'));
   el.classList.add('sel');
@@ -832,7 +848,6 @@ function setCmpFilter(el){
   renderCmpChart();
 }
 
-// ── COMPARE ──
 async function renderCompare(){
   try{
     const res=await apiCall('getSummary',{days:7});
@@ -866,7 +881,6 @@ function renderCmpChart(){
                 <div class="leg"><div class="leg-dot" style="background:var(--blue)"></div>เงินโอน</div>`;
     titleText='รายรับ — เงินสด vs เงินโอน';
   } else {
-    // specific category
     const catIdx=CATS.indexOf(cmpFilter);
     const color=catIdx>=0?CAT_COLORS[catIdx]:'#e8641a';
     datasets=[{
@@ -896,7 +910,6 @@ function renderCmpChart(){
     }
   });
 
-  // Cards summary
   const cards=document.getElementById('compare-cards');
   cards.innerHTML=summary.slice(-4).map(d=>{
     const isTd=d.date===todayStr();
