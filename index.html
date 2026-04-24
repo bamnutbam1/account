@@ -334,19 +334,59 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);fon
 .ni-icon{font-size:19px;line-height:1}
 .ni-lbl{font-size:10px;font-weight:500}
 
-/* CHART & COMPARE */
+/* CHART & COMPARE & REPORT */
 .chart-wrap{position:relative;width:100%}
 .h200{height:200px}.h220{height:220px}.h180{height:180px}
 
-.cmp-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 1.25rem 1rem}
-.cmp-card{
-  background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
-  padding:12px 14px;
+/* REPORT STYLES */
+.report-summary-box {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: var(--r);
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
 }
-.cmp-card.today{border-color:rgba(232,100,26,0.4);box-shadow:0 0 12px rgba(232,100,26,0.08)}
-.cmp-date{font-size:11px;color:var(--text3);margin-bottom:8px}
-.cmp-row{display:flex;justify-content:space-between;font-size:12px;padding:3px 0}
-.cmp-key{color:var(--text2)}
+.rs-title { font-size: 12px; color: var(--text2); margin-bottom: 5px; }
+.rs-net { font-family: 'Mitr', sans-serif; font-size: 32px; font-weight: 500; margin-bottom: 10px; }
+.rs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; border-top: 1px solid var(--border); padding-top: 10px; }
+.rs-item { display: flex; flex-direction: column; }
+.rs-item span { font-size: 11px; color: var(--text3); }
+.rs-item strong { font-family: 'Mitr', sans-serif; font-size: 16px; }
+
+.week-group { margin-bottom: 1rem; }
+.week-header {
+  background: var(--surface2);
+  padding: 10px 14px;
+  border-radius: var(--rsm);
+  border: 1px solid var(--border2);
+  display: flex; justify-content: space-between; align-items: center;
+  font-weight: 500; font-size: 14px; color: var(--text);
+  cursor: pointer;
+}
+.week-header:hover { background: var(--surface3); }
+.week-badge { background: var(--orange-dim); color: var(--orange2); padding: 2px 8px; border-radius: 20px; font-size: 11px; }
+.week-content {
+  padding: 10px 0 0 10px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.day-card {
+  background: var(--surface);
+  border-left: 3px solid var(--border2);
+  padding: 10px 12px;
+  display: grid; grid-template-columns: 80px 1fr; gap: 10px;
+  align-items: center;
+}
+.day-card.profit { border-left-color: var(--green); }
+.day-card.loss { border-left-color: var(--red); }
+.day-date { font-size: 12px; color: var(--text2); text-align: center; }
+.day-date strong { display: block; font-size: 16px; color: var(--text); font-family: 'Mitr', sans-serif; }
+.day-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; text-align: center; gap: 5px; }
+.day-stat-col { display: flex; flex-direction: column; font-size: 11px; color: var(--text3); }
+.day-stat-col strong { font-size: 13px; font-family: 'Mitr', sans-serif; color: var(--text); }
+.day-stat-col .ain { color: var(--green); }
+.day-stat-col .aout { color: var(--red); }
+
 
 /* LEGEND & MULTI-SELECT DELETE */
 .legend{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:10px}
@@ -408,7 +448,8 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);fon
 @media(max-width:420px){
   .metrics{grid-template-columns:repeat(2,1fr)}
   .hero-val{font-size:40px}
-  .hdr-btn{padding:6px 10px;font-size:11px}
+  .hdr-btn{padding:6px 8px;font-size:12px}
+  .hdr-btn .btn-label{display:none} /* ซ่อนข้อความปุ่มให้เหลือแต่ไอคอนเพื่อให้วาง 4 ปุ่มได้ */
 }
 </style>
 </head>
@@ -427,8 +468,14 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);fon
     </div>
   </div>
   <div class="hdr-actions">
+    <!-- ซ่อน Input เลือกไฟล์ไว้ -->
+    <input type="file" id="import-file" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" style="display:none" onchange="handleImportFile(event)">
+    
+    <button class="hdr-btn" style="border-color:rgba(212,136,26,0.7);background:rgba(212,136,26,0.25);color:#ffd090" onclick="document.getElementById('import-file').click()">
+      <span>⬆</span><span class="btn-label">นำเข้า</span>
+    </button>
     <button class="hdr-btn sheet-btn" onclick="openSheet()">
-      <span>📊</span><span class="btn-label">ดูชีท</span>
+      <span>📊</span><span class="btn-label">ชีท</span>
     </button>
     <button class="hdr-btn green-btn" onclick="downloadExcel()">
       <span>⬇</span><span class="btn-label">Excel</span>
@@ -653,32 +700,21 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);fon
   <div class="spacer"></div>
 </div>
 
-<!-- COMPARE -->
+<!-- COMPARE / REPORT -->
 <div class="section" id="sec-compare">
   <div class="body-pad">
-    <div style="margin-bottom:1rem;">
-      <div style="font-size:11px;color:var(--text3);margin-bottom:8px;letter-spacing:0.05em;">ดูสรุปตาม</div>
-      <div class="chips" id="cmp-chips" style="gap:6px;">
-        <button class="chip sel" data-cmp="all"          onclick="setCmpFilter(this)">📊 ภาพรวม</button>
-        <button class="chip"     data-cmp="income"       onclick="setCmpFilter(this)">💰 รายรับ</button>
-        <button class="chip"     data-cmp="ค่าแรง"       onclick="setCmpFilter(this)">👷 ค่าแรง</button>
-        <button class="chip"     data-cmp="ตลาดสะพานใหม่" onclick="setCmpFilter(this)">🛒 สะพานใหม่</button>
-        <button class="chip"     data-cmp="ตลาดโพธิ์สุวรรณ" onclick="setCmpFilter(this)">🛒 โพธิ์สุวรรณ</button>
-        <button class="chip"     data-cmp="เซเว่น"       onclick="setCmpFilter(this)">🏪 เซเว่น</button>
-        <button class="chip"     data-cmp="แมคโคร"       onclick="setCmpFilter(this)">🏬 แมคโคร</button>
-        <button class="chip"     data-cmp="อื่นๆ"        onclick="setCmpFilter(this)">📦 อื่นๆ</button>
-      </div>
+    
+    <!-- MONTH SELECTOR -->
+    <div style="display:flex; align-items:center; gap:10px; margin-bottom:1.5rem; background:var(--surface2); padding:10px 14px; border-radius:var(--rsm); border:1px solid var(--border2);">
+      <label style="font-size:14px; color:var(--text); font-weight:500;">📅 เลือกเดือน:</label>
+      <input type="month" id="report-month" class="batch-input" style="padding:6px 10px; font-size:14px; flex:1;" onchange="renderCompare()">
     </div>
-    <div class="card">
-      <div class="card-ttl" id="cmp-chart-title">เปรียบเทียบ 7 วันล่าสุด</div>
-      <div class="legend" id="cmp-legend">
-        <div class="leg"><div class="leg-dot" style="background:var(--green)"></div>รายรับ</div>
-        <div class="leg"><div class="leg-dot" style="background:var(--red)"></div>รายจ่าย</div>
-      </div>
-      <div class="chart-wrap h220"><canvas id="cmpChart" role="img" aria-label="เปรียบเทียบ 7 วัน">เปรียบเทียบ</canvas></div>
+
+    <div id="report-container">
+      <div class="loading">กำลังประมวลผลข้อมูล...</div>
     </div>
+
   </div>
-  <div class="cmp-grid" id="compare-cards"></div>
   <div class="spacer"></div>
 </div>
 
@@ -697,7 +733,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);fon
     <div class="ni-icon">📋</div><div class="ni-lbl">ประวัติ</div>
   </button>
   <button class="ni" onclick="switchTab('compare',this)">
-    <div class="ni-icon">📈</div><div class="ni-lbl">เปรียบเทียบ</div>
+    <div class="ni-icon">รายงาน</div><div class="ni-lbl">สรุปรายเดือน</div>
   </button>
 </nav>
 </div>
@@ -726,12 +762,10 @@ const EXP_CATS = [
 // ── STATE ──
 let currentDay = todayStr();
 let histTab    = 'all';
-let cmpFilter  = 'all';
 let incMode    = 'single';
 let expMode    = 'single';
-let cmpSummaryCache = null;
-let dashChart, catChart, cmpChart;
-let lastEntries = [];
+let dashChart, catChart;
+let allEntriesCache = null; // เก็บประวัติทั้งหมดเพื่อทำรายงาน
 
 // ── BACKGROUND SYNC STATE ──
 let syncQueue = [];
@@ -742,6 +776,11 @@ document.getElementById('inc-date').value = todayStr();
 document.getElementById('inc-b-date').value = todayStr();
 document.getElementById('exp-date').value = todayStr();
 document.getElementById('exp-b-date').value = todayStr();
+
+// เซ็ตเดือนปัจจุบันให้หน้า Report
+const d = new Date();
+document.getElementById('report-month').value = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+
 renderDashboard();
 
 // ── DATE HELPERS ──
@@ -750,9 +789,13 @@ function todayStr(){
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
 
-// แปลงวันที่ทุกรูปแบบให้กลายเป็น YYYY-MM-DD ทันทีที่ดึงข้อมูลลงมา ป้องกันความคลาดเคลื่อน 100%
+// แปลงวันที่ทุกรูปแบบให้กลายเป็น YYYY-MM-DD
 function formatToYYYYMMDD(s) {
   if (!s) return '';
+  if (s instanceof Date) {
+    if (isNaN(s.getTime())) return '';
+    return s.getFullYear() + '-' + String(s.getMonth()+1).padStart(2,'0') + '-' + String(s.getDate()).padStart(2,'0');
+  }
   try {
     if (s.includes('T')) {
       const d = new Date(s);
@@ -772,7 +815,6 @@ function formatToYYYYMMDD(s) {
   return s;
 }
 
-// แสดงผลภาษาไทย โดยแยกจากสตริง YYYY-MM-DD แบบตรงไปตรงมา
 function thaiDate(s){
   if(!s)return'';
   const parts = s.split('-');
@@ -789,11 +831,83 @@ function thaiDate(s){
   return s;
 }
 
+function getThaiMonthName(yyyy_mm) {
+  const parts = yyyy_mm.split('-');
+  if(parts.length !== 2) return yyyy_mm;
+  const m = parseInt(parts[1], 10);
+  const y = parseInt(parts[0], 10) + 543;
+  const monthNames=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+  return `${monthNames[m-1]} ${y}`;
+}
+
 function fmt(n){ return '฿'+Math.round(n).toLocaleString('th-TH'); }
 function showToast(msg,type){
   const t=document.getElementById('toast');
   t.textContent=msg; t.className='show '+(type||'');
   setTimeout(()=>t.className='',2600);
+}
+
+// ── IMPORT CSV / EXCEL ──
+function handleImportFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  showToast('กำลังอ่านไฟล์...', '');
+  
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, {type: 'array', cellDates: true});
+      const firstSheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[firstSheetName];
+      const rows = XLSX.utils.sheet_to_json(worksheet);
+      
+      if (rows.length === 0) {
+        showToast('ไม่พบข้อมูลในไฟล์', 'error');
+        event.target.value = '';
+        return;
+      }
+
+      let importCount = 0;
+      
+      rows.forEach(row => {
+         const dateRaw = row['วันที่'];
+         const typeRaw = row['ประเภท'];
+         const amountRaw = row['จำนวนเงิน'];
+         
+         if(dateRaw && typeRaw && amountRaw !== undefined) {
+            const dateStr = formatToYYYYMMDD(dateRaw);
+            const amount = parseFloat(amountRaw);
+            const note = row['หมายเหตุ'] || '';
+            const type = typeRaw === 'รายรับ' ? 'income' : 'expense';
+            
+            const entry = { type, date: dateStr, amount, note };
+            
+            if (type === 'income') {
+               entry.payType = row['ประเภทรับเงิน'] || 'cash';
+            } else {
+               entry.cat = row['หมวดหมู่'] || 'อื่นๆ';
+            }
+            
+            enqueueTask('addEntry', entry);
+            importCount++;
+         }
+      });
+
+      if (importCount > 0) {
+         showToast(`กำลังนำเข้า ${importCount} รายการ...`, 'success');
+      } else {
+         showToast('รูปแบบไฟล์ไม่ถูกต้อง', 'error');
+      }
+      
+    } catch(err) {
+      console.error(err);
+      showToast('อ่านไฟล์ไม่สำเร็จ', 'error');
+    }
+    event.target.value = '';
+  };
+  reader.readAsArrayBuffer(file);
 }
 
 // ── BACKGROUND SYNC LOGIC ──
@@ -817,24 +931,26 @@ async function processQueue() {
   while (syncQueue.length > 0) {
     const task = syncQueue[0];
     try {
-      // ส่งคำสั่งแบบเงียบ ไม่ต้องแสดง Toast
       const url=new URL(SCRIPT_URL);
       url.searchParams.set('action',task.action);
       Object.entries(task.params||{}).forEach(([k,v])=>url.searchParams.set(k,v));
       await fetch(url.toString(), {redirect:'follow'});
       
-      syncQueue.shift(); // สำเร็จแล้วเอาออกจากคิว
+      syncQueue.shift(); 
       updateSyncBanner();
     } catch (e) {
       console.error("Sync error:", e);
-      await new Promise(r => setTimeout(r, 2000)); // หากล้มเหลว รอ 2 วิแล้วลองใหม่
+      await new Promise(r => setTimeout(r, 2000)); 
     }
   }
   isSyncing = false;
 
-  // รีเฟรชหน้าจอแบบเนียนๆ เมื่อซิงค์ครบ
+  // Clear cache to force refresh
+  allEntriesCache = null;
+
   if (document.getElementById('sec-dashboard').classList.contains('active')) renderDashboard();
   if (document.getElementById('sec-history').classList.contains('active')) renderHistory();
+  if (document.getElementById('sec-compare').classList.contains('active')) renderCompare();
 }
 
 function enqueueTask(action, params) {
@@ -902,26 +1018,22 @@ async function downloadExcel(){
 // ── CLEAR FORMS ──
 function clearForms(){
   if(!confirm('ล้างข้อมูลฟอร์มที่กรอกค้างไว้ทั้งหมด?'))return;
-  // single income
   document.getElementById('inc-amount').value='';
   document.getElementById('inc-note').value='';
   document.getElementById('inc-date').value=todayStr();
   document.querySelectorAll('#pay-chips .chip').forEach((c,i)=>i===0?c.classList.add('sel'):c.classList.remove('sel'));
   
-  // batch income
   document.getElementById('inc-b-date').value=todayStr();
   document.getElementById('inc-b-cash-amt').value='';
   document.getElementById('inc-b-cash-note').value='';
   document.getElementById('inc-b-trans-amt').value='';
   document.getElementById('inc-b-trans-note').value='';
 
-  // single exp
   document.getElementById('exp-amount').value='';
   document.getElementById('exp-note').value='';
   document.getElementById('exp-date').value=todayStr();
   document.querySelectorAll('#cat-chips .chip').forEach((c,i)=>i===0?c.classList.add('sel'):c.classList.remove('sel'));
   
-  // batch exp
   document.getElementById('exp-b-date').value=todayStr();
   EXP_CATS.forEach(cat => {
     if (cat.id !== 'other') {
@@ -930,7 +1042,6 @@ function clearForms(){
     }
   });
 
-  // reset others
   const otherContainer = document.getElementById('other-items-container');
   if(otherContainer) {
     otherContainer.innerHTML = `
@@ -944,7 +1055,7 @@ function clearForms(){
   showToast('ล้างข้อมูลฟอร์มแล้ว ✓','');
 }
 
-// ── API FETCH (Safe Date Parse) ──
+// ── API FETCH ──
 async function apiCall(action,params){
   const url=new URL(SCRIPT_URL);
   url.searchParams.set('action',action);
@@ -953,12 +1064,8 @@ async function apiCall(action,params){
   const r=await fetch(url.toString(),{redirect:'follow'});
   const data = await r.json();
 
-  // แปลงข้อมูลวันที่ให้สะอาดและถูกต้องสำหรับประเทศไทย
   if (data.entries) {
     data.entries.forEach(e => { e.date = formatToYYYYMMDD(e.date); });
-  }
-  if (data.summary) {
-    data.summary.forEach(e => { e.date = formatToYYYYMMDD(e.date); });
   }
 
   return data;
@@ -1240,10 +1347,15 @@ async function renderHistory(){
   const el=document.getElementById('history-list');
   el.innerHTML='<div class="loading">กำลังโหลด...</div>';
   try{
-    const res=await apiCall('getEntries',{});
-    let list=(res.entries||[]).sort((a,b)=>b.date.localeCompare(a.date)||Number(b.id)-Number(a.id));
+    if(!allEntriesCache) {
+      const res = await apiCall('getEntries',{});
+      allEntriesCache = res.entries || [];
+    }
+    let list = [...allEntriesCache].sort((a,b)=>b.date.localeCompare(a.date)||Number(b.id)-Number(a.id));
+    
     if(histTab==='income') list=list.filter(e=>e.type==='income');
     if(histTab==='expense')list=list.filter(e=>e.type==='expense');
+    
     const toolbar=document.getElementById('hist-toolbar');
     toolbar.style.display=list.length===0?'none':'flex';
     updateSelCount();
@@ -1291,110 +1403,154 @@ function deleteSelected(){
   [...checked].forEach(cb => {
     enqueueTask('deleteEntry', {id: cb.dataset.id});
     const el = document.getElementById('entry-'+cb.dataset.id);
-    if(el) el.style.display = 'none'; // ซ่อนทันทีเพื่อความเร็ว
+    if(el) el.style.display = 'none'; 
   });
   
-  // ล้างการเลือก
   document.querySelectorAll('#history-list .entry-cb').forEach(c => c.checked = false);
   updateSelCount();
   
   showToast(`สั่งลบ ${checked.length} รายการลงคิวแล้ว`, 'success');
 }
 
-// ── COMPARE ──
-function setCmpFilter(el){
-  document.querySelectorAll('#cmp-chips .chip').forEach(c=>c.classList.remove('sel'));
-  el.classList.add('sel');
-  cmpFilter=el.dataset.cmp;
-  renderCmpChart();
+// ── COMPARE / MONTHLY REPORT ──
+function toggleWeek(weekId) {
+  const content = document.getElementById('week-content-' + weekId);
+  const icon = document.getElementById('week-icon-' + weekId);
+  if (content.style.display === 'none') {
+    content.style.display = 'flex';
+    icon.textContent = '▼';
+  } else {
+    content.style.display = 'none';
+    icon.textContent = '▶';
+  }
 }
 
 async function renderCompare(){
+  const container = document.getElementById('report-container');
+  const monthInput = document.getElementById('report-month').value; // format: "YYYY-MM"
+  
+  if(!monthInput) return;
+  container.innerHTML = '<div class="loading">กำลังประมวลผลข้อมูล...</div>';
+
   try{
-    const res=await apiCall('getSummary',{days:7});
-    cmpSummaryCache=res.summary||[];
-    renderCmpChart();
-  }catch(e){showToast(e.message,'error');}
-}
+    // ดึงข้อมูลทั้งหมด 1 ครั้ง (ถ้ายังไม่มี) เพื่อคำนวณโลคอล
+    if(!allEntriesCache) {
+      const res = await apiCall('getEntries',{});
+      allEntriesCache = res.entries || [];
+    }
 
-function renderCmpChart(){
-  const summary=cmpSummaryCache||[];
-  if(!summary.length)return;
+    // กรองเอาเฉพาะเดือนที่เลือก
+    const monthEntries = allEntriesCache.filter(e => e.date && e.date.startsWith(monthInput));
 
-  const labels=summary.map(d=>thaiDate(d.date));
-  let datasets=[];
-  let legendHTML='';
-  let titleText='เปรียบเทียบ 7 วันล่าสุด';
+    if(monthEntries.length === 0) {
+      container.innerHTML = `<div class="empty"><div class="empty-icon">📂</div><div class="empty-text">ไม่มีข้อมูลในเดือน ${getThaiMonthName(monthInput)}</div></div>`;
+      return;
+    }
 
-  if(cmpFilter==='all'){
-    datasets=[
-      {label:'รายรับ', data:summary.map(d=>Math.round(d.income)), backgroundColor:'rgba(46,168,122,0.8)',borderRadius:5},
-      {label:'รายจ่าย',data:summary.map(d=>Math.round(d.expense)),backgroundColor:'rgba(224,80,96,0.8)', borderRadius:5}
-    ];
-    legendHTML=`<div class="leg"><div class="leg-dot" style="background:var(--green)"></div>รายรับ</div>
-                <div class="leg"><div class="leg-dot" style="background:var(--red)"></div>รายจ่าย</div>`;
-  } else if(cmpFilter==='income'){
-    datasets=[
-      {label:'เงินสด',  data:summary.map(d=>Math.round(d.cash)),     backgroundColor:'rgba(46,168,122,0.9)',borderRadius:5},
-      {label:'เงินโอน', data:summary.map(d=>Math.round(d.transfer)), backgroundColor:'rgba(80,144,224,0.8)', borderRadius:5}
-    ];
-    legendHTML=`<div class="leg"><div class="leg-dot" style="background:var(--green)"></div>เงินสด</div>
-                <div class="leg"><div class="leg-dot" style="background:var(--blue)"></div>เงินโอน</div>`;
-    titleText='รายรับ — เงินสด vs เงินโอน';
-  } else {
-    const catIdx=CATS.indexOf(cmpFilter);
-    const color=catIdx>=0?CAT_COLORS[catIdx]:'#e8641a';
-    datasets=[{
-      label:cmpFilter,
-      data:summary.map(d=>Math.round((d.catTotals&&d.catTotals[cmpFilter])||0)),
-      backgroundColor:color+'cc',borderRadius:5
-    }];
-    legendHTML=`<div class="leg"><div class="leg-dot" style="background:${color}"></div>${cmpFilter}</div>`;
-    titleText=`รายจ่าย — ${cmpFilter}`;
-  }
+    // 1. รวมยอดสรุปรายวัน
+    const dailyData = {};
+    let totalMonthInc = 0;
+    let totalMonthExp = 0;
 
-  document.getElementById('cmp-chart-title').textContent=titleText;
-  document.getElementById('cmp-legend').innerHTML=legendHTML;
-
-  if(cmpChart)cmpChart.destroy();
-  cmpChart=new Chart(document.getElementById('cmpChart'),{
-    type:'bar',
-    data:{labels,datasets},
-    options:{
-      responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false}},
-      scales:{
-        y:{beginAtZero:true,grid:{color:'rgba(255,200,120,0.05)'},
-           ticks:{color:'#7a6a55',callback:v=>'฿'+Math.round(v).toLocaleString('th-TH'),font:{size:10}}},
-        x:{grid:{display:false},ticks:{color:'#b8a48a',font:{size:10},maxRotation:30}}
+    monthEntries.forEach(e => {
+      if(!dailyData[e.date]) {
+        dailyData[e.date] = { inc: 0, exp: 0 };
       }
-    }
-  });
+      const amt = Number(e.amount) || 0;
+      if (e.type === 'income') {
+        dailyData[e.date].inc += amt;
+        totalMonthInc += amt;
+      } else {
+        dailyData[e.date].exp += amt;
+        totalMonthExp += amt;
+      }
+    });
 
-  const cards=document.getElementById('compare-cards');
-  cards.innerHTML=summary.slice(-4).map(d=>{
-    const isTd=d.date===todayStr();
-    let rows='';
-    if(cmpFilter==='all'){
-      const nc=d.net>=0?'ain':'aout';
-      rows=`<div class="cmp-row"><span class="cmp-key">รายรับ</span><span style="color:var(--green);font-weight:500">${fmt(d.income)}</span></div>
-            <div class="cmp-row"><span class="cmp-key">รายจ่าย</span><span style="color:var(--red)">${fmt(d.expense)}</span></div>
-            <div class="cmp-row"><span class="cmp-key">กำไร</span><span class="${nc}" style="font-weight:500">${fmt(d.net)}</span></div>`;
-    } else if(cmpFilter==='income'){
-      rows=`<div class="cmp-row"><span class="cmp-key">รายรับรวม</span><span style="color:var(--green);font-weight:500">${fmt(d.income)}</span></div>
-            <div class="cmp-row"><span class="cmp-key">เงินสด</span><span style="color:var(--green)">${fmt(d.cash)}</span></div>
-            <div class="cmp-row"><span class="cmp-key">เงินโอน</span><span style="color:var(--blue)">${fmt(d.transfer)}</span></div>`;
-    } else {
-      const val=(d.catTotals&&d.catTotals[cmpFilter])||0;
-      rows=`<div class="cmp-row"><span class="cmp-key">${cmpFilter}</span><span style="color:var(--amber);font-weight:500">${fmt(val)}</span></div>
-            <div class="cmp-row"><span class="cmp-key">รายจ่ายรวม</span><span style="color:var(--red)">${fmt(d.expense)}</span></div>
-            <div class="cmp-row"><span class="cmp-key">สัดส่วน</span><span style="color:var(--text2)">${d.expense>0?Math.round(val/d.expense*100):0}%</span></div>`;
+    // 2. จัดกลุ่มรายสัปดาห์ (สัปดาห์ 1: วันที่ 1-7, 2: 8-14, ...)
+    const weeklyData = { 1:{inc:0, exp:0, days:[]}, 2:{inc:0, exp:0, days:[]}, 3:{inc:0, exp:0, days:[]}, 4:{inc:0, exp:0, days:[]}, 5:{inc:0, exp:0, days:[]} };
+    
+    // Sort dates
+    const sortedDates = Object.keys(dailyData).sort();
+    
+    sortedDates.forEach(dateStr => {
+      const dayNum = parseInt(dateStr.split('-')[2], 10);
+      const weekNum = Math.min(5, Math.ceil(dayNum / 7)); // 1 to 5
+      
+      weeklyData[weekNum].inc += dailyData[dateStr].inc;
+      weeklyData[weekNum].exp += dailyData[dateStr].exp;
+      weeklyData[weekNum].days.push({
+        date: dateStr,
+        dayNum: dayNum,
+        inc: dailyData[dateStr].inc,
+        exp: dailyData[dateStr].exp,
+        net: dailyData[dateStr].inc - dailyData[dateStr].exp
+      });
+    });
+
+    // 3. วาด UI
+    let html = '';
+    const netMonth = totalMonthInc - totalMonthExp;
+    const netColor = netMonth >= 0 ? 'var(--green)' : 'var(--red)';
+
+    // กล่องสรุปเดือน
+    html += `
+      <div class="report-summary-box">
+        <div class="rs-title">สรุปยอดสุทธิ ${getThaiMonthName(monthInput)}</div>
+        <div class="rs-net" style="color: ${netColor}">${fmt(netMonth)}</div>
+        <div class="rs-grid">
+          <div class="rs-item"><span>รายรับรวม</span><strong class="ain">${fmt(totalMonthInc)}</strong></div>
+          <div class="rs-item"><span>รายจ่ายรวม</span><strong class="aout">${fmt(totalMonthExp)}</strong></div>
+        </div>
+      </div>
+    `;
+
+    // กล่องรายสัปดาห์
+    for(let w=1; w<=5; w++) {
+      if(weeklyData[w].days.length === 0) continue; // ข้ามสัปดาห์ที่ไม่มีข้อมูล
+
+      const wNet = weeklyData[w].inc - weeklyData[w].exp;
+      const wNetStr = (wNet >= 0 ? '+' : '−') + fmt(Math.abs(wNet));
+      const wColor = wNet >= 0 ? 'var(--green)' : 'var(--red)';
+
+      // Header สัปดาห์
+      html += `<div class="week-group">
+        <div class="week-header" onclick="toggleWeek(${w})">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span id="week-icon-${w}" style="color:var(--text3); font-size:10px;">▼</span>
+            สัปดาห์ที่ ${w} <span class="week-badge">วันที่ ${(w-1)*7+1} - ${w===5?'สิ้นเดือน':w*7}</span>
+          </div>
+          <div style="color:${wColor}">${wNetStr}</div>
+        </div>
+        <div class="week-content" id="week-content-${w}">
+      `;
+
+      // รายละเอียดรายวัน
+      weeklyData[w].days.reverse().forEach(d => { // แสดงวันล่าสุดของสัปดาห์นั้นขึ้นก่อน
+        const dNetStr = (d.net >= 0 ? '+' : '') + fmt(d.net);
+        const cardClass = d.net >= 0 ? 'profit' : 'loss';
+        
+        html += `
+          <div class="day-card ${cardClass}">
+            <div class="day-date">
+              วันที่ <strong>${d.dayNum}</strong>
+            </div>
+            <div class="day-stats">
+              <div class="day-stat-col">รับ <strong class="ain">${fmt(d.inc)}</strong></div>
+              <div class="day-stat-col">จ่าย <strong class="aout">${fmt(d.exp)}</strong></div>
+              <div class="day-stat-col">กำไร <strong style="color:${d.net>=0?'var(--green)':'var(--red)'}">${dNetStr}</strong></div>
+            </div>
+          </div>
+        `;
+      });
+
+      html += `</div></div>`; // ปิด week-content และ week-group
     }
-    return`<div class="cmp-card ${isTd?'today':''}">
-      <div class="cmp-date">${thaiDate(d.date)}${isTd?' 📍':''}</div>
-      ${rows}
-    </div>`;
-  }).join('');
+
+    container.innerHTML = html;
+
+  } catch(e) {
+    container.innerHTML = `<div class="empty"><div class="empty-text">เกิดข้อผิดพลาด: ${e.message}</div></div>`;
+  }
 }
 
 // ── NAV ──
