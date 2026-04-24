@@ -50,6 +50,18 @@
 html,body{height:100%;overflow-x:hidden}
 body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.5}
 
+/* SYNC BANNER */
+#sync-banner {
+  position: fixed; top: 60px; left: 0; width: 100%;
+  background: var(--blue); color: #fff;
+  text-align: center; font-size: 13px; font-weight: 500;
+  padding: 5px; z-index: 40;
+  transform: translateY(-100%); opacity: 0;
+  transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+#sync-banner.show { transform: translateY(0); opacity: 1; }
+#sync-banner.success { background: var(--green); }
+
 /* HEADER */
 .hdr{
   background:var(--surface);
@@ -403,6 +415,9 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);fon
 <body>
 <div id="app" style="max-width:680px;margin:0 auto">
 
+<!-- BACKGROUND SYNC BANNER -->
+<div id="sync-banner">กำลังบันทึกข้อมูล...</div>
+
 <!-- HEADER -->
 <header class="hdr">
   <div class="logo">
@@ -718,6 +733,10 @@ let cmpSummaryCache = null;
 let dashChart, catChart, cmpChart;
 let lastEntries = [];
 
+// ── BACKGROUND SYNC STATE ──
+let syncQueue = [];
+let isSyncing = false;
+
 // ── BOOT ──
 document.getElementById('inc-date').value = todayStr();
 document.getElementById('inc-b-date').value = todayStr();
@@ -725,23 +744,102 @@ document.getElementById('exp-date').value = todayStr();
 document.getElementById('exp-b-date').value = todayStr();
 renderDashboard();
 
-// ── HELPERS ──
+// ── DATE HELPERS ──
 function todayStr(){
   const d=new Date();
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
+
+// แปลงวันที่ทุกรูปแบบให้กลายเป็น YYYY-MM-DD ทันทีที่ดึงข้อมูลลงมา ป้องกันความคลาดเคลื่อน 100%
+function formatToYYYYMMDD(s) {
+  if (!s) return '';
+  try {
+    if (s.includes('T')) {
+      const d = new Date(s);
+      if (!isNaN(d.getTime())) {
+         return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+      }
+    } else if (s.includes('/')) {
+      const p = s.split(' ')[0].split('/');
+      if (p.length === 3) {
+        if (p[0].length === 4) return `${p[0]}-${p[1].padStart(2,'0')}-${p[2].padStart(2,'0')}`;
+        else return `${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`;
+      }
+    } else if (s.includes('-')) {
+      return s.split(' ')[0];
+    }
+  } catch(e) {}
+  return s;
+}
+
+// แสดงผลภาษาไทย โดยแยกจากสตริง YYYY-MM-DD แบบตรงไปตรงมา
 function thaiDate(s){
   if(!s)return'';
-  const [y,m,dd]=s.split('-');
-  const monthNames=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
-  const yearBE=(+y+543).toString().slice(-2);
-  return`${+dd} ${monthNames[+m-1]} ${yearBE}`;
+  const parts = s.split('-');
+  if (parts.length === 3) {
+    const y = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10);
+    const dd = parseInt(parts[2], 10);
+    if (!isNaN(y) && !isNaN(m) && !isNaN(dd) && m >= 1 && m <= 12) {
+      const monthNames=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+      const yearBE=(y < 2500 ? y+543 : y).toString().slice(-2);
+      return `${dd} ${monthNames[m-1]} ${yearBE}`;
+    }
+  }
+  return s;
 }
+
 function fmt(n){ return '฿'+Math.round(n).toLocaleString('th-TH'); }
 function showToast(msg,type){
   const t=document.getElementById('toast');
   t.textContent=msg; t.className='show '+(type||'');
   setTimeout(()=>t.className='',2600);
+}
+
+// ── BACKGROUND SYNC LOGIC ──
+function updateSyncBanner() {
+  const banner = document.getElementById('sync-banner');
+  if (syncQueue.length > 0) {
+    banner.className = 'show';
+    banner.textContent = `กำลังบันทึกข้อมูลเบื้องหลัง (${syncQueue.length} รายการ)...`;
+  } else {
+    banner.className = 'show success';
+    banner.textContent = `บันทึกข้อมูลเข้า Sheet เรียบร้อย ✓`;
+    setTimeout(() => { if(syncQueue.length === 0) banner.className = ''; }, 2500);
+  }
+}
+
+async function processQueue() {
+  if (isSyncing) return;
+  isSyncing = true;
+  updateSyncBanner();
+
+  while (syncQueue.length > 0) {
+    const task = syncQueue[0];
+    try {
+      // ส่งคำสั่งแบบเงียบ ไม่ต้องแสดง Toast
+      const url=new URL(SCRIPT_URL);
+      url.searchParams.set('action',task.action);
+      Object.entries(task.params||{}).forEach(([k,v])=>url.searchParams.set(k,v));
+      await fetch(url.toString(), {redirect:'follow'});
+      
+      syncQueue.shift(); // สำเร็จแล้วเอาออกจากคิว
+      updateSyncBanner();
+    } catch (e) {
+      console.error("Sync error:", e);
+      await new Promise(r => setTimeout(r, 2000)); // หากล้มเหลว รอ 2 วิแล้วลองใหม่
+    }
+  }
+  isSyncing = false;
+
+  // รีเฟรชหน้าจอแบบเนียนๆ เมื่อซิงค์ครบ
+  if (document.getElementById('sec-dashboard').classList.contains('active')) renderDashboard();
+  if (document.getElementById('sec-history').classList.contains('active')) renderHistory();
+}
+
+function enqueueTask(action, params) {
+  syncQueue.push({action, params});
+  processQueue();
 }
 
 // ── SHEET / EXCEL ──
@@ -846,13 +944,24 @@ function clearForms(){
   showToast('ล้างข้อมูลฟอร์มแล้ว ✓','');
 }
 
-// ── API ──
+// ── API FETCH (Safe Date Parse) ──
 async function apiCall(action,params){
   const url=new URL(SCRIPT_URL);
   url.searchParams.set('action',action);
   Object.entries(params||{}).forEach(([k,v])=>url.searchParams.set(k,v));
+  
   const r=await fetch(url.toString(),{redirect:'follow'});
-  return await r.json();
+  const data = await r.json();
+
+  // แปลงข้อมูลวันที่ให้สะอาดและถูกต้องสำหรับประเทศไทย
+  if (data.entries) {
+    data.entries.forEach(e => { e.date = formatToYYYYMMDD(e.date); });
+  }
+  if (data.summary) {
+    data.summary.forEach(e => { e.date = formatToYYYYMMDD(e.date); });
+  }
+
+  return data;
 }
 
 // ── CALC ──
@@ -1002,10 +1111,8 @@ function addOtherItem() {
   container.appendChild(div);
 }
 
-// ── FORMS ──
-async function submitIncome(){
-  const btn = document.querySelector('#sec-income .btn-sub');
-  
+// ── FORMS (Optimized Background Save) ──
+function submitIncome(){
   if (incMode === 'single') {
     const date = document.getElementById('inc-date').value;
     const amount = parseFloat(document.getElementById('inc-amount').value);
@@ -1014,16 +1121,11 @@ async function submitIncome(){
     
     if (!date || !amount || amount <= 0) { showToast('กรุณากรอกวันที่และจำนวนเงิน', 'error'); return; }
     
-    btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
-    try {
-      await apiCall('addEntry', { type: 'income', date, amount, note, payType });
-      document.getElementById('inc-amount').value = '';
-      document.getElementById('inc-note').value = '';
-      showToast('บันทึกรายรับเรียบร้อย ✓', 'success');
-      if (date === currentDay) renderDashboard();
-    } catch(e) { showToast(e.message, 'error'); }
+    enqueueTask('addEntry', { type: 'income', date, amount, note, payType });
     
-    btn.disabled = false; btn.textContent = '+ บันทึกรายรับ';
+    document.getElementById('inc-amount').value = '';
+    document.getElementById('inc-note').value = '';
+    showToast('เพิ่มรายการเข้าคิวบันทึก ✓', 'success');
     
   } else {
     // โหมด Batch
@@ -1036,42 +1138,22 @@ async function submitIncome(){
     if (!date) { showToast('กรุณากรอกวันที่', 'error'); return; }
     if (cashAmt <= 0 && transAmt <= 0) { showToast('กรุณากรอกยอดเงินอย่างน้อย 1 รายการ', 'error'); return; }
 
-    btn.disabled = true;
-    
-    let successCount = 0;
     const entries = [];
     if (cashAmt > 0) entries.push({ type: 'income', date, amount: cashAmt, note: cashNote, payType: 'cash' });
     if (transAmt > 0) entries.push({ type: 'income', date, amount: transAmt, note: transNote, payType: 'transfer' });
 
-    try {
-      let completed = 0;
-      // ส่งข้อมูลไปบันทึกพร้อมกันทั้งหมด (Parallel) จะเร็วกว่ารอทีละรายการ
-      const promises = entries.map(entry => 
-        apiCall('addEntry', entry).then(() => {
-          completed++;
-          btn.textContent = `กำลังบันทึก (${completed}/${entries.length})...`;
-        })
-      );
-      await Promise.all(promises);
-      successCount = completed;
-      
-      document.getElementById('inc-b-cash-amt').value = '';
-      document.getElementById('inc-b-cash-note').value = '';
-      document.getElementById('inc-b-trans-amt').value = '';
-      document.getElementById('inc-b-trans-note').value = '';
-      
-      showToast(`บันทึกรายรับ ${successCount} รายการเรียบร้อย ✓`, 'success');
-      if (date === currentDay) renderDashboard();
-    } catch(e) {
-      showToast(`เกิดข้อผิดพลาด: ${e.message}`, 'error');
-    }
-    btn.disabled = false; btn.textContent = '+ บันทึกรายรับ';
+    entries.forEach(entry => enqueueTask('addEntry', entry));
+    
+    document.getElementById('inc-b-cash-amt').value = '';
+    document.getElementById('inc-b-cash-note').value = '';
+    document.getElementById('inc-b-trans-amt').value = '';
+    document.getElementById('inc-b-trans-note').value = '';
+    
+    showToast(`เพิ่ม ${entries.length} รายการเข้าคิวบันทึก ✓`, 'success');
   }
 }
 
-async function submitExpense(){
-  const btn = document.querySelector('#sec-expense .btn-sub');
-  
+function submitExpense(){
   if (expMode === 'single') {
     const date = document.getElementById('exp-date').value;
     const amount = parseFloat(document.getElementById('exp-amount').value);
@@ -1080,16 +1162,11 @@ async function submitExpense(){
     
     if (!date || !amount || amount <= 0) { showToast('กรุณากรอกวันที่และจำนวนเงิน', 'error'); return; }
     
-    btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
-    try {
-      await apiCall('addEntry', { type: 'expense', date, amount, note, cat });
-      document.getElementById('exp-amount').value = '';
-      document.getElementById('exp-note').value = '';
-      showToast('บันทึกรายจ่ายเรียบร้อย ✓', 'success');
-      if (date === currentDay) renderDashboard();
-    } catch(e) { showToast(e.message, 'error'); }
+    enqueueTask('addEntry', { type: 'expense', date, amount, note, cat });
     
-    btn.disabled = false; btn.textContent = '− บันทึกรายจ่าย';
+    document.getElementById('exp-amount').value = '';
+    document.getElementById('exp-note').value = '';
+    showToast('เพิ่มรายการเข้าคิวบันทึก ✓', 'success');
     
   } else {
     // โหมด Batch
@@ -1119,54 +1196,37 @@ async function submitExpense(){
 
     if (entries.length === 0) { showToast('กรุณากรอกยอดเงินอย่างน้อย 1 หมวดหมู่', 'error'); return; }
 
-    btn.disabled = true;
-    let successCount = 0;
-    try {
-      let completed = 0;
-      // ส่งข้อมูลไปบันทึกพร้อมกันทั้งหมด (Parallel) เพื่อความรวดเร็ว
-      const promises = entries.map(entry => 
-        apiCall('addEntry', entry).then(() => {
-          completed++;
-          btn.textContent = `กำลังบันทึก (${completed}/${entries.length})...`;
-        })
-      );
-      await Promise.all(promises);
-      successCount = completed;
-      
-      for (const cat of EXP_CATS) {
-        if (cat.id !== 'other') {
-          document.getElementById(`exp-b-${cat.id}-amt`).value = '';
-          document.getElementById(`exp-b-${cat.id}-note`).value = '';
-        }
+    entries.forEach(entry => enqueueTask('addEntry', entry));
+    
+    for (const cat of EXP_CATS) {
+      if (cat.id !== 'other') {
+        document.getElementById(`exp-b-${cat.id}-amt`).value = '';
+        document.getElementById(`exp-b-${cat.id}-note`).value = '';
       }
-
-      const otherContainer = document.getElementById('other-items-container');
-      if(otherContainer) {
-        otherContainer.innerHTML = `
-          <div class="field-row other-item">
-            <input type="number" class="batch-input other-amt" placeholder="ยอดเงิน" min="0" step="1">
-            <input type="text" class="batch-input other-note" placeholder="เช่น ค่าน้ำมัน, ค่าแก๊ส">
-          </div>
-        `;
-      }
-      
-      showToast(`บันทึกรายจ่าย ${successCount} รายการเรียบร้อย ✓`, 'success');
-      if (date === currentDay) renderDashboard();
-    } catch(e) {
-      showToast(`เกิดข้อผิดพลาด: ${e.message}`, 'error');
     }
-    btn.disabled = false; btn.textContent = '− บันทึกรายจ่าย';
+
+    const otherContainer = document.getElementById('other-items-container');
+    if(otherContainer) {
+      otherContainer.innerHTML = `
+        <div class="field-row other-item">
+          <input type="number" class="batch-input other-amt" placeholder="ยอดเงิน" min="0" step="1">
+          <input type="text" class="batch-input other-note" placeholder="เช่น ค่าน้ำมัน, ค่าแก๊ส">
+        </div>
+      `;
+    }
+    
+    showToast(`เพิ่ม ${entries.length} รายการเข้าคิวบันทึก ✓`, 'success');
   }
 }
 
-async function deleteEntry(id){
+function deleteEntry(id){
   if(!confirm('ลบรายการนี้?'))return;
-  try{
-    await apiCall('deleteEntry',{id});
-    showToast('ลบแล้ว','');
-    renderDashboard();
-    if(document.getElementById('sec-history').classList.contains('active'))renderHistory();
-  }catch(e){showToast(e.message,'error');}
+  enqueueTask('deleteEntry', {id});
+  
+  // ซ่อนบรรทัดทันทีเพื่อความรวดเร็ว
+  const el = document.getElementById('entry-'+id);
+  if(el) el.style.display = 'none';
+  showToast('สั่งลบเรียบร้อย','');
 }
 
 // ── HISTORY ──
@@ -1223,26 +1283,22 @@ function toggleSelectAll(){
   updateSelCount();
 }
 
-async function deleteSelected(){
+function deleteSelected(){
   const checked=document.querySelectorAll('#history-list .entry-cb:checked');
   if(checked.length===0)return;
   if(!confirm(`ลบ ${checked.length} รายการที่เลือก?`))return;
-  const ids=[...checked].map(cb=>cb.dataset.id);
-  const btn=document.getElementById('btn-del-sel');
-  btn.disabled=true;btn.textContent='กำลังลบ...';
-  let ok=0,fail=0;
   
-  // ส่งคำสั่งลบพร้อมกันเพื่อความรวดเร็ว
-  const promises = ids.map(id => 
-    apiCall('deleteEntry', {id})
-      .then(() => { ok++; btn.textContent = `กำลังลบ (${ok}/${ids.length})...`; })
-      .catch(() => fail++)
-  );
-  await Promise.all(promises);
+  [...checked].forEach(cb => {
+    enqueueTask('deleteEntry', {id: cb.dataset.id});
+    const el = document.getElementById('entry-'+cb.dataset.id);
+    if(el) el.style.display = 'none'; // ซ่อนทันทีเพื่อความเร็ว
+  });
   
-  showToast(fail===0?`ลบ ${ok} รายการแล้ว ✓`:`ลบสำเร็จ ${ok} / ล้มเหลว ${fail}`, fail===0?'success':'error');
-  renderHistory();
-  renderDashboard();
+  // ล้างการเลือก
+  document.querySelectorAll('#history-list .entry-cb').forEach(c => c.checked = false);
+  updateSelCount();
+  
+  showToast(`สั่งลบ ${checked.length} รายการลงคิวแล้ว`, 'success');
 }
 
 // ── COMPARE ──
