@@ -81,10 +81,12 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);fon
   transition:all 0.15s;white-space:nowrap;
 }
 .hdr-btn:hover{background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.3)}
-.hdr-btn.green-btn{border-color:rgba(46,168,122,0.5);background:rgba(46,168,122,0.15);color:#4dd9a0}
-.hdr-btn.green-btn:hover{background:rgba(46,168,122,0.28)}
-.hdr-btn.sheet-btn{border-color:rgba(80,144,224,0.5);background:rgba(80,144,224,0.15);color:#7ab4f0}
-.hdr-btn.sheet-btn:hover{background:rgba(80,144,224,0.28)}
+.hdr-btn.green-btn{border-color:rgba(46,168,122,0.7);background:rgba(46,168,122,0.25);color:#5de8b0}
+.hdr-btn.green-btn:hover{background:rgba(46,168,122,0.38)}
+.hdr-btn.sheet-btn{border-color:rgba(80,144,224,0.7);background:rgba(80,144,224,0.25);color:#90c4ff}
+.hdr-btn.sheet-btn:hover{background:rgba(80,144,224,0.38)}
+.hdr-btn.red-btn{border-color:rgba(224,80,96,0.7);background:rgba(224,80,96,0.2);color:#ff8a96}
+.hdr-btn.red-btn:hover{background:rgba(224,80,96,0.35)}
 
 /* SECTIONS */
 .section{display:none}
@@ -340,7 +342,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);fon
 @media(max-width:420px){
   .metrics{grid-template-columns:repeat(2,1fr)}
   .hero-val{font-size:40px}
-  .hdr-btn .btn-label{display:none}
+  .hdr-btn{padding:6px 10px;font-size:11px}
 }
 </style>
 </head>
@@ -361,6 +363,9 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);fon
     </button>
     <button class="hdr-btn green-btn" onclick="downloadExcel()">
       <span>⬇</span><span class="btn-label">Excel</span>
+    </button>
+    <button class="hdr-btn red-btn" onclick="clearForms()">
+      <span>🗑</span><span class="btn-label">ล้าง</span>
     </button>
   </div>
 </header>
@@ -554,15 +559,6 @@ document.getElementById('inc-date').value = todayStr();
 document.getElementById('exp-date').value = todayStr();
 renderDashboard();
 
-// Register Service Worker
-if('serviceWorker' in navigator){
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js')
-      .then(()=>console.log('SW registered'))
-      .catch(e=>console.log('SW error',e));
-  });
-}
-
 // ── HELPERS ──
 function todayStr(){
   const d=new Date();
@@ -571,7 +567,11 @@ function todayStr(){
 function thaiDate(s){
   if(!s)return'';
   const [y,m,dd]=s.split('-');
-  return new Date(+y,+m-1,+dd).toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'2-digit'});
+  const date=new Date(+y,+m-1,+dd);
+  const day=date.getDate();
+  const monthNames=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  const yearBE=(+y+543).toString().slice(-2);
+  return`${day} ${monthNames[+m-1]} ${yearBE}`;
 }
 function fmt(n){ return '฿'+Math.round(n).toLocaleString('th-TH'); }
 function showToast(msg,type){
@@ -635,6 +635,20 @@ async function downloadExcel(){
     XLSX.writeFile(wb,`ครัวออยออย_${month}.xlsx`);
     showToast('ดาวน์โหลด Excel แล้ว ✓','success');
   }catch(e){ showToast('โหลดไม่ได้: '+e.message,'error'); }
+}
+
+// ── CLEAR FORMS ──
+function clearForms(){
+  if(!confirm('ล้างข้อมูลในฟอร์มรายรับและรายจ่าย?'))return;
+  document.getElementById('inc-amount').value='';
+  document.getElementById('inc-note').value='';
+  document.getElementById('inc-date').value=todayStr();
+  document.querySelectorAll('#pay-chips .chip').forEach((c,i)=>i===0?c.classList.add('sel'):c.classList.remove('sel'));
+  document.getElementById('exp-amount').value='';
+  document.getElementById('exp-note').value='';
+  document.getElementById('exp-date').value=todayStr();
+  document.querySelectorAll('#cat-chips .chip').forEach((c,i)=>i===0?c.classList.add('sel'):c.classList.remove('sel'));
+  showToast('ล้างข้อมูลฟอร์มแล้ว ✓','');
 }
 
 // ── API ──
