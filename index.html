@@ -321,6 +321,41 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);fon
 .leg{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)}
 .leg-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
 
+/* MULTI-SELECT DELETE */
+.hist-toolbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:8px 0;margin-bottom:8px;gap:8px;
+}
+.hist-toolbar-left{display:flex;align-items:center;gap:8px}
+.sel-count{font-size:12px;color:var(--text2)}
+.btn-del-sel{
+  padding:7px 16px;border-radius:20px;border:1.5px solid rgba(224,80,96,0.6);
+  background:rgba(224,80,96,0.18);color:#ff8a96;
+  font-size:12px;font-weight:500;font-family:'Sarabun',sans-serif;
+  cursor:pointer;transition:all 0.15s;
+}
+.btn-del-sel:hover{background:rgba(224,80,96,0.32)}
+.btn-del-sel:disabled{opacity:0.35;cursor:not-allowed}
+.btn-sel-all{
+  padding:7px 14px;border-radius:20px;border:1.5px solid var(--border2);
+  background:var(--surface2);color:var(--text2);
+  font-size:12px;font-weight:500;font-family:'Sarabun',sans-serif;
+  cursor:pointer;transition:all 0.15s;
+}
+.btn-sel-all:hover{border-color:var(--orange);color:var(--orange2)}
+.entry-cb{
+  width:20px;height:20px;border-radius:6px;
+  border:1.5px solid var(--border2);background:var(--surface2);
+  appearance:none;-webkit-appearance:none;
+  cursor:pointer;flex-shrink:0;position:relative;transition:all 0.15s;
+}
+.entry-cb:checked{background:var(--orange);border-color:var(--orange);}
+.entry-cb:checked::after{
+  content:'✓';position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%);color:#fff;font-size:12px;font-weight:700;
+}
+.entry.selected{border-color:rgba(232,100,26,0.4);background:rgba(232,100,26,0.06)}
+
 /* MISC */
 .empty{text-align:center;padding:2.5rem 1rem;color:var(--text3)}
 .empty-icon{font-size:36px;margin-bottom:10px;opacity:0.4}
@@ -480,6 +515,13 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);fon
       <button class="tab-btn"        onclick="setHistTab('income',this)">รายรับ</button>
       <button class="tab-btn"        onclick="setHistTab('expense',this)">รายจ่าย</button>
     </div>
+    <div class="hist-toolbar" id="hist-toolbar" style="display:none">
+      <div class="hist-toolbar-left">
+        <button class="btn-sel-all" onclick="toggleSelectAll()">เลือกทั้งหมด</button>
+        <span class="sel-count" id="sel-count">เลือก 0 รายการ</span>
+      </div>
+      <button class="btn-del-sel" id="btn-del-sel" onclick="deleteSelected()" disabled>🗑 ลบที่เลือก</button>
+    </div>
     <div id="history-list"><div class="loading">กำลังโหลด...</div></div>
   </div>
   <div class="spacer"></div>
@@ -567,11 +609,9 @@ function todayStr(){
 function thaiDate(s){
   if(!s)return'';
   const [y,m,dd]=s.split('-');
-  const date=new Date(+y,+m-1,+dd);
-  const day=date.getDate();
   const monthNames=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
   const yearBE=(+y+543).toString().slice(-2);
-  return`${day} ${monthNames[+m-1]} ${yearBE}`;
+  return`${+dd} ${monthNames[+m-1]} ${yearBE}`;
 }
 function fmt(n){ return '฿'+Math.round(n).toLocaleString('th-TH'); }
 function showToast(msg,type){
@@ -750,7 +790,7 @@ function changeDay(d){
 }
 
 // ── ENTRY HTML ──
-function eHTML(e){
+function eHTML(e, selectable=false){
   const isInc=e.type==='income';
   const icon=isInc?'💰':(CAT_ICONS[e.cat]||'📦');
   let badge='';
@@ -760,7 +800,9 @@ function eHTML(e){
     const bc=e.cat==='ค่าแรง'?'bl':e.cat&&e.cat.includes('ตลาด')?'bm':'bo';
     badge=`<span class="badge ${bc}">${e.cat||''}</span>`;
   }
-  return`<div class="entry">
+  const cb=selectable?`<input type="checkbox" class="entry-cb" data-id="${e.id}" onchange="onCbChange(this)">`:'' ;
+  return`<div class="entry" id="entry-${e.id}">
+    ${cb}
     <div class="entry-l">
       <div class="entry-icon ${isInc?'ei-in':'ei-out'}">${icon}</div>
       <div class="entry-body">
@@ -770,7 +812,7 @@ function eHTML(e){
     </div>
     <div class="entry-r">
       <div class="entry-amt ${isInc?'ain':'aout'}">${isInc?'+':'−'}${fmt(e.amount)}</div>
-      <button class="del" onclick="deleteEntry('${e.id}')">✕</button>
+      ${selectable?'':`<button class="del" onclick="deleteEntry('${e.id}')">✕</button>`}
     </div>
   </div>`;
 }
@@ -846,12 +888,60 @@ async function renderHistory(){
     let list=(res.entries||[]).sort((a,b)=>b.date.localeCompare(a.date)||Number(b.id)-Number(a.id));
     if(histTab==='income') list=list.filter(e=>e.type==='income');
     if(histTab==='expense')list=list.filter(e=>e.type==='expense');
+    const toolbar=document.getElementById('hist-toolbar');
+    toolbar.style.display=list.length===0?'none':'flex';
+    updateSelCount();
     el.innerHTML=list.length===0
       ?'<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">ยังไม่มีรายการ</div></div>'
-      :'<div class="entry-list">'+list.map(eHTML).join('')+'</div>';
+      :'<div class="entry-list">'+list.map(e=>eHTML(e,true)).join('')+'</div>';
   }catch(e){
     el.innerHTML='<div class="empty"><div class="empty-text">โหลดไม่ได้: '+e.message+'</div></div>';
   }
+}
+
+function onCbChange(cb){
+  const entry=document.getElementById('entry-'+cb.dataset.id);
+  if(entry) entry.classList.toggle('selected',cb.checked);
+  updateSelCount();
+}
+
+function updateSelCount(){
+  const cbs=document.querySelectorAll('#history-list .entry-cb');
+  const checked=document.querySelectorAll('#history-list .entry-cb:checked');
+  const n=checked.length;
+  document.getElementById('sel-count').textContent=`เลือก ${n} รายการ`;
+  document.getElementById('btn-del-sel').disabled=n===0;
+  const selAllBtn=document.querySelector('.btn-sel-all');
+  if(selAllBtn) selAllBtn.textContent=n===cbs.length&&cbs.length>0?'ยกเลิกทั้งหมด':'เลือกทั้งหมด';
+}
+
+function toggleSelectAll(){
+  const cbs=document.querySelectorAll('#history-list .entry-cb');
+  const checked=document.querySelectorAll('#history-list .entry-cb:checked');
+  const shouldCheck=checked.length<cbs.length;
+  cbs.forEach(cb=>{
+    cb.checked=shouldCheck;
+    const entry=document.getElementById('entry-'+cb.dataset.id);
+    if(entry) entry.classList.toggle('selected',shouldCheck);
+  });
+  updateSelCount();
+}
+
+async function deleteSelected(){
+  const checked=document.querySelectorAll('#history-list .entry-cb:checked');
+  if(checked.length===0)return;
+  if(!confirm(`ลบ ${checked.length} รายการที่เลือก?`))return;
+  const ids=[...checked].map(cb=>cb.dataset.id);
+  const btn=document.getElementById('btn-del-sel');
+  btn.disabled=true;btn.textContent='กำลังลบ...';
+  let ok=0,fail=0;
+  for(const id of ids){
+    try{ await apiCall('deleteEntry',{id}); ok++; }
+    catch{ fail++; }
+  }
+  showToast(fail===0?`ลบ ${ok} รายการแล้ว ✓`:`ลบสำเร็จ ${ok} / ล้มเหลว ${fail}`, fail===0?'success':'error');
+  renderHistory();
+  renderDashboard();
 }
 
 // ── COMPARE ──
