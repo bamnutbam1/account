@@ -1044,11 +1044,16 @@ async function submitIncome(){
     if (transAmt > 0) entries.push({ type: 'income', date, amount: transAmt, note: transNote, payType: 'transfer' });
 
     try {
-      for (let i = 0; i < entries.length; i++) {
-        btn.textContent = `กำลังบันทึก (${i + 1}/${entries.length})...`;
-        await apiCall('addEntry', entries[i]);
-        successCount++;
-      }
+      let completed = 0;
+      // ส่งข้อมูลไปบันทึกพร้อมกันทั้งหมด (Parallel) จะเร็วกว่ารอทีละรายการ
+      const promises = entries.map(entry => 
+        apiCall('addEntry', entry).then(() => {
+          completed++;
+          btn.textContent = `กำลังบันทึก (${completed}/${entries.length})...`;
+        })
+      );
+      await Promise.all(promises);
+      successCount = completed;
       
       document.getElementById('inc-b-cash-amt').value = '';
       document.getElementById('inc-b-cash-note').value = '';
@@ -1117,11 +1122,16 @@ async function submitExpense(){
     btn.disabled = true;
     let successCount = 0;
     try {
-      for (let i = 0; i < entries.length; i++) {
-        btn.textContent = `กำลังบันทึก (${i + 1}/${entries.length})...`;
-        await apiCall('addEntry', entries[i]);
-        successCount++;
-      }
+      let completed = 0;
+      // ส่งข้อมูลไปบันทึกพร้อมกันทั้งหมด (Parallel) เพื่อความรวดเร็ว
+      const promises = entries.map(entry => 
+        apiCall('addEntry', entry).then(() => {
+          completed++;
+          btn.textContent = `กำลังบันทึก (${completed}/${entries.length})...`;
+        })
+      );
+      await Promise.all(promises);
+      successCount = completed;
       
       for (const cat of EXP_CATS) {
         if (cat.id !== 'other') {
@@ -1221,10 +1231,15 @@ async function deleteSelected(){
   const btn=document.getElementById('btn-del-sel');
   btn.disabled=true;btn.textContent='กำลังลบ...';
   let ok=0,fail=0;
-  for(const id of ids){
-    try{ await apiCall('deleteEntry',{id}); ok++; }
-    catch{ fail++; }
-  }
+  
+  // ส่งคำสั่งลบพร้อมกันเพื่อความรวดเร็ว
+  const promises = ids.map(id => 
+    apiCall('deleteEntry', {id})
+      .then(() => { ok++; btn.textContent = `กำลังลบ (${ok}/${ids.length})...`; })
+      .catch(() => fail++)
+  );
+  await Promise.all(promises);
+  
   showToast(fail===0?`ลบ ${ok} รายการแล้ว ✓`:`ลบสำเร็จ ${ok} / ล้มเหลว ${fail}`, fail===0?'success':'error');
   renderHistory();
   renderDashboard();
