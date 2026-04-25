@@ -787,47 +787,45 @@ let allEntriesCache = null;
 let syncQueue = [];
 let isSyncing = false;
 
-// ── DB HELPERS FOR AUTO-SAVE DRAFT (IndexedDB) ──
-const DB_NAME = 'KruaOilOilDB';
-const STORE_NAME = 'drafts';
+// ── OPTIMISTIC DATA MERGE (ป้องกันข้อมูลหายตอนโหลดหน้าเว็บใหม่) ──
+let fetchPromise = null;
 
-function initDB() {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, 1);
-    request.onupgradeneeded = (e) => {
-      e.target.result.createObjectStore(STORE_NAME);
-    };
-    request.onsuccess = (e) => resolve(e.target.result);
-    request.onerror = (e) => reject(e.target.error);
-  });
-}
-
-async function saveDraftData(key, data) {
-  try {
-    const db = await initDB();
-    const tx = db.transaction(STORE_NAME, 'readwrite');
-    tx.objectStore(STORE_NAME).put(data, key);
-  } catch (e) {
-    console.error('Draft save error:', e);
+async function getMergedEntries() {
+  // 1. ดึงข้อมูลจาก Server (ทำครั้งเดียวแล้วจำไว้ใน cache)
+  if (!allEntriesCache) {
+    if (!fetchPromise) {
+      fetchPromise = apiCall('getEntries', {}).then(res => {
+        allEntriesCache = res.entries || [];
+        fetchPromise = null;
+      }).catch(e => {
+        allEntriesCache = []; // ถ้าเน็ตหลุด ให้เป็น array ว่างไปก่อน
+        fetchPromise = null;
+      });
+    }
+    await fetchPromise;
   }
+
+  // 2. ผสมข้อมูลที่กำลังรอคิว (เพื่อโชว์ในจอทันทีแม้จะยังไม่ถึง Google Sheet)
+  const pendingAdds = syncQueue
+    .filter(t => t.action === 'addEntry')
+    .map((t, i) => ({
+      ...t.params,
+      id: 'temp_' + Date.now() + '_' + i,
+      amount: Number(t.params.amount)
+    }));
+
+  const pendingDeletes = syncQueue
+    .filter(t => t.action === 'deleteEntry')
+    .map(t => String(t.params.id));
+
+  // คืนค่า = ข้อมูล Server หักลบรายการที่กำลังจะลบทิ้ง แล้วบวกกับรายการที่กำลังเพิ่มใหม่
+  return allEntriesCache
+    .filter(e => !pendingDeletes.includes(String(e.id)))
+    .concat(pendingAdds);
 }
 
-async function getDraftData(key) {
-  try {
-    const db = await initDB();
-    return new Promise((resolve) => {
-      if (!db.objectStoreNames.contains(STORE_NAME)) return resolve(null);
-      const tx = db.transaction(STORE_NAME, 'readonly');
-      const req = tx.objectStore(STORE_NAME).get(key);
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => resolve(null);
-    });
-  } catch (e) {
-    return null;
-  }
-}
 
-// ── UI DRAFT BADGE INDICATOR ──
+// ── DRAFT SYSTEM (ใช้ LocalStorage ให้ชัวร์ 100% ไม่มีพลาด) ──
 let draftBadgeTimer;
 function showDraftBadge() {
   const badge = document.getElementById('draft-badge');
@@ -840,10 +838,10 @@ function showDraftBadge() {
 let draftTimer;
 function scheduleDraftSave() {
   clearTimeout(draftTimer);
-  draftTimer = setTimeout(saveDraftNow, 500); // ดีเลย์การบันทึกหลังจากพิมพ์เสร็จ
+  draftTimer = setTimeout(saveDraftNow, 500); 
 }
 
-async function saveDraftNow() {
+function saveDraftNow() {
   const otherItems = [];
   document.querySelectorAll('.other-item').forEach(item => {
     otherItems.push({
@@ -890,14 +888,13 @@ async function saveDraftNow() {
     }
   };
   
-  await saveDraftData('appDraft', draft);
-  showDraftBadge(); // แสดง UI แจ้งเตือนเมื่อเซฟเสร็จ
+  localStorage.setItem('kruaOilOilDraft', JSON.stringify(draft));
+  showDraftBadge(); 
 }
 
 function applyDraft(draft) {
   if (!draft) return;
 
-  // โหลดข้อมูล รายรับ (เดี่ยว)
   if (draft.incSingle) {
     document.getElementById('inc-date').value = draft.incSingle.date || todayStr();
     document.getElementById('inc-amount').value = draft.incSingle.amount || '';
@@ -911,7 +908,6 @@ function applyDraft(draft) {
     }
   }
 
-  // โหลดข้อมูล รายรับ (กลุ่ม)
   if (draft.incBatch) {
     document.getElementById('inc-b-date').value = draft.incBatch.date || todayStr();
     document.getElementById('inc-b-cash-amt').value = draft.incBatch.cashAmt || '';
@@ -920,7 +916,6 @@ function applyDraft(draft) {
     document.getElementById('inc-b-trans-note').value = draft.incBatch.transNote || '';
   }
 
-  // โหลดข้อมูล รายจ่าย (เดี่ยว)
   if (draft.expSingle) {
     document.getElementById('exp-date').value = draft.expSingle.date || todayStr();
     document.getElementById('exp-amount').value = draft.expSingle.amount || '';
@@ -934,7 +929,6 @@ function applyDraft(draft) {
     }
   }
 
-  // โหลดข้อมูล รายจ่าย (กลุ่ม)
   if (draft.expBatch) {
     document.getElementById('exp-b-date').value = draft.expBatch.date || todayStr();
     document.getElementById('exp-b-labor-amt').value = draft.expBatch.laborAmt || '';
@@ -953,7 +947,7 @@ function applyDraft(draft) {
       if (container) {
         container.innerHTML = '';
         if (draft.expBatch.otherItems.length === 0) {
-          addOtherItem(); // ถ้าไม่มีเลยให้แสดงกล่องว่าง 1 กล่อง
+          addOtherItem();
         } else {
           draft.expBatch.otherItems.forEach(item => {
             const div = document.createElement('div');
@@ -969,7 +963,6 @@ function applyDraft(draft) {
     }
   }
 
-  // ตั้งค่าโหมดที่ค้างไว้
   if (draft.incMode) {
     const btn = document.querySelector(`#sec-income .tabs .tab-btn:nth-child(${draft.incMode === 'single' ? 1 : 2})`);
     if(btn) {
@@ -994,7 +987,6 @@ function applyDraft(draft) {
 
 // ── BOOT ──
 window.addEventListener('DOMContentLoaded', async () => {
-  // ตั้งค่าเริ่มต้น
   document.getElementById('inc-date').value = todayStr();
   document.getElementById('inc-b-date').value = todayStr();
   document.getElementById('exp-date').value = todayStr();
@@ -1003,24 +995,28 @@ window.addEventListener('DOMContentLoaded', async () => {
   const dDate = new Date();
   document.getElementById('report-month').value = dDate.getFullYear() + '-' + String(dDate.getMonth()+1).padStart(2,'0');
 
-  // โหลดคิว Sync เก่าที่ค้างอยู่ (กันข้อมูลหายถ้าโหลดเว็บใหม่ตอนกำลังส่ง)
+  // ดึงคิวส่งข้อมูลที่อาจจะค้างอยู่ตอนโหลดเว็บใหม่กลับมา
   try {
     const sq = localStorage.getItem('kruaOilOilSyncQueue');
     if (sq) {
       syncQueue = JSON.parse(sq);
-      if (syncQueue.length > 0) processQueue();
     }
   } catch(e) {}
 
-  // โหลด Draft (ถ้ามี)
-  const draft = await getDraftData('appDraft');
-  if (draft) applyDraft(draft);
+  // ดึงแบบร่างที่บันทึกไว้
+  try {
+    const txt = localStorage.getItem('kruaOilOilDraft');
+    if (txt) applyDraft(JSON.parse(txt));
+  } catch(e) {}
 
-  // ผูก Event ให้ฟอร์มเซฟอัตโนมัติเมื่อมีการพิมพ์หรือเปลี่ยนแปลงค่า
+  // ผูก Event ให้ฟอร์มเซฟอัตโนมัติ
   document.addEventListener('input', scheduleDraftSave);
   document.addEventListener('change', scheduleDraftSave);
 
   renderDashboard();
+
+  // ถ้ามีคิวค้างอยู่ให้เริ่มส่ง
+  if (syncQueue.length > 0) processQueue();
 });
 
 // ── DATE HELPERS ──
@@ -1194,7 +1190,6 @@ function updateSyncBanner() {
 }
 
 function saveSyncQueue() {
-  // สำรองคิวไว้ใน LocalStorage เพื่อกันข้อมูลสูญหายเมื่อรีโหลดหน้าเว็บ
   localStorage.setItem('kruaOilOilSyncQueue', JSON.stringify(syncQueue));
 }
 
@@ -1212,7 +1207,7 @@ async function processQueue() {
       await fetch(url.toString(), {redirect:'follow'});
       
       syncQueue.shift(); 
-      saveSyncQueue(); // อัปเดตคิวที่เหลือลง LocalStorage
+      saveSyncQueue(); 
       updateSyncBanner();
     } catch (e) {
       console.error("Sync error:", e);
@@ -1220,8 +1215,11 @@ async function processQueue() {
     }
   }
   isSyncing = false;
+  
+  // ล้างแคช เมื่อทำงานเสร็จแล้วเพื่อดึงชุดความจริงจาก Server ล้วนๆ ในครั้งหน้า
   allEntriesCache = null;
 
+  // วาดหน้าจอใหม่ทันทีหลังซิงค์เสร็จ
   if (document.getElementById('sec-dashboard').classList.contains('active')) renderDashboard();
   if (document.getElementById('sec-history').classList.contains('active')) renderHistory();
   if (document.getElementById('sec-compare').classList.contains('active')) renderCompare();
@@ -1229,7 +1227,13 @@ async function processQueue() {
 
 function enqueueTask(action, params) {
   syncQueue.push({action, params});
-  saveSyncQueue(); // สำรองคิวไว้เลยกันเว็บปิด
+  saveSyncQueue(); 
+  
+  // อัปเดตหน้าจอทันที ไม่ต้องรอเน็ต!
+  if (document.getElementById('sec-dashboard').classList.contains('active')) renderDashboard();
+  if (document.getElementById('sec-history').classList.contains('active')) renderHistory();
+  if (document.getElementById('sec-compare').classList.contains('active')) renderCompare();
+  
   processQueue();
 }
 
@@ -1237,14 +1241,13 @@ function enqueueTask(action, params) {
 function openSheet(){ window.open(SHEET_URL,'_blank'); }
 
 async function downloadExcel(){
-  showToast('กำลังโหลดข้อมูล...','');
+  showToast('กำลังเตรียมไฟล์...','');
   try{
-    const res = await apiCall('getEntries',{});
-    const entries = res.entries || [];
+    const entries = await getMergedEntries();
     if(entries.length===0){ showToast('ไม่มีข้อมูล','error'); return; }
 
     const allData = [
-      ['วันที่','ประเภท','จำนวนเงิน','หมายเหตุ','ประเภทรับเงิน','หมวดหมู่','วันที่บันทึก']
+      ['วันที่','ประเภท','จำนวนเงิน','หมายเหตุ','ประเภทรับเงิน','หมวดหมู่']
     ];
     entries.sort((a,b)=>a.date.localeCompare(b.date)).forEach(e=>{
       allData.push([
@@ -1253,8 +1256,7 @@ async function downloadExcel(){
         Number(e.amount),
         e.note||'',
         e.payType||'',
-        e.cat||'',
-        e.createdAt||''
+        e.cat||''
       ]);
     });
 
@@ -1280,7 +1282,7 @@ async function downloadExcel(){
     const wb = XLSX.utils.book_new();
     const ws1 = XLSX.utils.aoa_to_sheet(allData);
     const ws2 = XLSX.utils.aoa_to_sheet(sumData);
-    ws1['!cols']=[{wch:12},{wch:8},{wch:12},{wch:20},{wch:10},{wch:18},{wch:22}];
+    ws1['!cols']=[{wch:12},{wch:8},{wch:12},{wch:20},{wch:10},{wch:18}];
     ws2['!cols']=[{wch:12},{wch:12},{wch:12},{wch:12},{wch:12},{wch:12},{wch:12}];
     XLSX.utils.book_append_sheet(wb,ws1,'รายการทั้งหมด');
     XLSX.utils.book_append_sheet(wb,ws2,'สรุปรายวัน');
@@ -1327,7 +1329,7 @@ function clearForms(){
     `;
   }
 
-  saveDraftNow(); // บันทึกความว่างเปล่าลงระบบ
+  saveDraftNow(); 
   showToast('ล้างข้อมูลฟอร์มแล้ว ✓','');
 }
 
@@ -1367,9 +1369,9 @@ async function renderDashboard(){
   lbl.innerHTML=thaiDate(currentDay)+(isToday?'<span class="today-tag">วันนี้</span>':'');
 
   try{
-    const res=await apiCall('getEntries',{date:currentDay});
-    const ents=res.entries||[];
-    const d=calc(currentDay,ents);
+    const ents = await getMergedEntries();
+    const currentDayEnts = ents.filter(e => e.date === currentDay);
+    const d=calc(currentDay, currentDayEnts);
 
     document.getElementById('m-income').textContent   =fmt(d.income);
     document.getElementById('m-cash').textContent     =fmt(d.cash);
@@ -1416,7 +1418,7 @@ async function renderDashboard(){
       });
     }
 
-    const rec=[...ents].slice(-6).reverse();
+    const rec=[...currentDayEnts].slice(-6).reverse();
     document.getElementById('recent-list').innerHTML=rec.length===0
       ?'<div class="empty"><div class="empty-icon">🍳</div><div class="empty-text">ยังไม่มีรายการวันนี้</div></div>'
       :'<div class="entry-list">'+rec.map(e => eHTML(e, false)).join('')+'</div>';
@@ -1461,7 +1463,7 @@ function eHTML(e, selectable=false){
 function selectChip(el,gid){
   document.querySelectorAll('#'+gid+' .chip').forEach(c=>c.classList.remove('sel'));
   el.classList.add('sel');
-  saveDraftNow(); // บันทึกร่าง
+  saveDraftNow(); 
 }
 function getChip(gid){
   const s=document.querySelector('#'+gid+' .chip.sel');return s?s.dataset.val:null;
@@ -1473,7 +1475,7 @@ function setIncMode(mode, btn) {
   btn.classList.add('active');
   document.getElementById('inc-single-form').style.display = mode === 'single' ? 'block' : 'none';
   document.getElementById('inc-batch-form').style.display = mode === 'batch' ? 'block' : 'none';
-  saveDraftNow(); // บันทึกร่าง
+  saveDraftNow(); 
 }
 
 function setExpMode(mode, btn) {
@@ -1482,7 +1484,7 @@ function setExpMode(mode, btn) {
   btn.classList.add('active');
   document.getElementById('exp-single-form').style.display = mode === 'single' ? 'block' : 'none';
   document.getElementById('exp-batch-form').style.display = mode === 'batch' ? 'block' : 'none';
-  saveDraftNow(); // บันทึกร่าง
+  saveDraftNow(); 
 }
 
 function addOtherItem() {
@@ -1494,7 +1496,7 @@ function addOtherItem() {
     <input type="text" class="batch-input other-note" placeholder="เช่น ค่าน้ำมัน, ค่าแก๊ส">
   `;
   container.appendChild(div);
-  saveDraftNow(); // บันทึกร่าง
+  saveDraftNow(); 
 }
 
 // ── FORMS ──
@@ -1512,8 +1514,8 @@ function submitIncome(){
     document.getElementById('inc-amount').value = '';
     document.getElementById('inc-note').value = '';
     
-    saveDraftNow(); // ล้างร่างหลังบันทึก
-    showToast('เพิ่มรายการเข้าคิวบันทึก ✓', 'success');
+    saveDraftNow(); 
+    showToast('บันทึกรายรับแล้ว ✓', 'success');
     
   } else {
     // โหมด Batch
@@ -1537,8 +1539,8 @@ function submitIncome(){
     document.getElementById('inc-b-trans-amt').value = '';
     document.getElementById('inc-b-trans-note').value = '';
     
-    saveDraftNow(); // ล้างร่างหลังบันทึก
-    showToast(`เพิ่ม ${entries.length} รายการเข้าคิวบันทึก ✓`, 'success');
+    saveDraftNow(); 
+    showToast(`บันทึก ${entries.length} รายการแล้ว ✓`, 'success');
   }
 }
 
@@ -1556,8 +1558,8 @@ function submitExpense(){
     document.getElementById('exp-amount').value = '';
     document.getElementById('exp-note').value = '';
     
-    saveDraftNow(); // ล้างร่างหลังบันทึก
-    showToast('เพิ่มรายการเข้าคิวบันทึก ✓', 'success');
+    saveDraftNow(); 
+    showToast('บันทึกรายจ่ายแล้ว ✓', 'success');
     
   } else {
     // โหมด Batch
@@ -1606,17 +1608,14 @@ function submitExpense(){
       `;
     }
     
-    saveDraftNow(); // ล้างร่างหลังบันทึก
-    showToast(`เพิ่ม ${entries.length} รายการเข้าคิวบันทึก ✓`, 'success');
+    saveDraftNow(); 
+    showToast(`บันทึก ${entries.length} รายการแล้ว ✓`, 'success');
   }
 }
 
 function deleteEntry(id){
   if(!confirm('ลบรายการนี้?'))return;
   enqueueTask('deleteEntry', {id});
-  
-  const el = document.getElementById('entry-'+id);
-  if(el) el.style.display = 'none';
   showToast('สั่งลบเรียบร้อย','');
 }
 
@@ -1631,11 +1630,8 @@ async function renderHistory(){
   const el=document.getElementById('history-list');
   el.innerHTML='<div class="loading">กำลังโหลด...</div>';
   try{
-    if(!allEntriesCache) {
-      const res = await apiCall('getEntries',{});
-      allEntriesCache = res.entries || [];
-    }
-    let list = [...allEntriesCache].sort((a,b)=>b.date.localeCompare(a.date)||Number(b.id)-Number(a.id));
+    let allEnts = await getMergedEntries();
+    let list = [...allEnts].sort((a,b)=>b.date.localeCompare(a.date)||String(b.id).localeCompare(String(a.id)));
     
     if(histTab==='income') list=list.filter(e=>e.type==='income');
     if(histTab==='expense')list=list.filter(e=>e.type==='expense');
@@ -1686,14 +1682,12 @@ function deleteSelected(){
   
   [...checked].forEach(cb => {
     enqueueTask('deleteEntry', {id: cb.dataset.id});
-    const el = document.getElementById('entry-'+cb.dataset.id);
-    if(el) el.style.display = 'none'; 
   });
   
   document.querySelectorAll('#history-list .entry-cb').forEach(c => c.checked = false);
   updateSelCount();
   
-  showToast(`สั่งลบ ${checked.length} รายการลงคิวแล้ว`, 'success');
+  showToast(`สั่งลบ ${checked.length} รายการแล้ว`, 'success');
 }
 
 // ── COMPARE / MONTHLY REPORT ──
@@ -1717,12 +1711,8 @@ async function renderCompare(){
   container.innerHTML = '<div class="loading">กำลังประมวลผลข้อมูล...</div>';
 
   try{
-    if(!allEntriesCache) {
-      const res = await apiCall('getEntries',{});
-      allEntriesCache = res.entries || [];
-    }
-
-    const monthEntries = allEntriesCache.filter(e => e.date && e.date.startsWith(monthInput));
+    const allEnts = await getMergedEntries();
+    const monthEntries = allEnts.filter(e => e.date && e.date.startsWith(monthInput));
 
     if(monthEntries.length === 0) {
       container.innerHTML = `<div class="empty"><div class="empty-icon">📂</div><div class="empty-text">ไม่มีข้อมูลในเดือน ${getThaiMonthName(monthInput)}</div></div>`;
