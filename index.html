@@ -62,6 +62,20 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);fon
 #sync-banner.show { transform: translateY(0); opacity: 1; }
 #sync-banner.success { background: var(--green); }
 
+/* DRAFT BADGE INDICATOR */
+#draft-badge {
+  position: fixed; top: 70px; left: 50%; transform: translateX(-50%);
+  background: var(--surface2); color: var(--text2);
+  border: 1px solid var(--border2); padding: 4px 14px;
+  border-radius: 20px; font-size: 11px; font-weight: 500;
+  opacity: 0; transition: all 0.3s ease; z-index: 45;
+  pointer-events: none; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+#draft-badge.show {
+  opacity: 1; top: 76px;
+  color: var(--green); border-color: rgba(46,168,122,0.3);
+}
+
 /* HEADER */
 .hdr{
   background:var(--surface);
@@ -458,6 +472,8 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);fon
 
 <!-- BACKGROUND SYNC BANNER -->
 <div id="sync-banner">กำลังบันทึกข้อมูล...</div>
+<!-- DRAFT BADGE -->
+<div id="draft-badge">✓ บันทึกร่างฟอร์มแล้ว</div>
 
 <!-- HEADER -->
 <header class="hdr">
@@ -765,7 +781,7 @@ let histTab    = 'all';
 let incMode    = 'single';
 let expMode    = 'single';
 let dashChart, catChart;
-let allEntriesCache = null; // เก็บประวัติทั้งหมดเพื่อทำรายงาน
+let allEntriesCache = null;
 
 // ── BACKGROUND SYNC STATE ──
 let syncQueue = [];
@@ -811,13 +827,23 @@ async function getDraftData(key) {
   }
 }
 
+// ── UI DRAFT BADGE INDICATOR ──
+let draftBadgeTimer;
+function showDraftBadge() {
+  const badge = document.getElementById('draft-badge');
+  if(!badge) return;
+  badge.classList.add('show');
+  clearTimeout(draftBadgeTimer);
+  draftBadgeTimer = setTimeout(() => badge.classList.remove('show'), 2000);
+}
+
 let draftTimer;
 function scheduleDraftSave() {
   clearTimeout(draftTimer);
-  draftTimer = setTimeout(saveDraftNow, 800); // ดีเลย์การบันทึกหลังจากพิมพ์เสร็จ
+  draftTimer = setTimeout(saveDraftNow, 500); // ดีเลย์การบันทึกหลังจากพิมพ์เสร็จ
 }
 
-function saveDraftNow() {
+async function saveDraftNow() {
   const otherItems = [];
   document.querySelectorAll('.other-item').forEach(item => {
     otherItems.push({
@@ -863,7 +889,9 @@ function saveDraftNow() {
       otherItems: otherItems
     }
   };
-  saveDraftData('appDraft', draft);
+  
+  await saveDraftData('appDraft', draft);
+  showDraftBadge(); // แสดง UI แจ้งเตือนเมื่อเซฟเสร็จ
 }
 
 function applyDraft(draft) {
@@ -975,11 +1003,18 @@ window.addEventListener('DOMContentLoaded', async () => {
   const dDate = new Date();
   document.getElementById('report-month').value = dDate.getFullYear() + '-' + String(dDate.getMonth()+1).padStart(2,'0');
 
+  // โหลดคิว Sync เก่าที่ค้างอยู่ (กันข้อมูลหายถ้าโหลดเว็บใหม่ตอนกำลังส่ง)
+  try {
+    const sq = localStorage.getItem('kruaOilOilSyncQueue');
+    if (sq) {
+      syncQueue = JSON.parse(sq);
+      if (syncQueue.length > 0) processQueue();
+    }
+  } catch(e) {}
+
   // โหลด Draft (ถ้ามี)
   const draft = await getDraftData('appDraft');
-  if (draft) {
-    applyDraft(draft);
-  }
+  if (draft) applyDraft(draft);
 
   // ผูก Event ให้ฟอร์มเซฟอัตโนมัติเมื่อมีการพิมพ์หรือเปลี่ยนแปลงค่า
   document.addEventListener('input', scheduleDraftSave);
@@ -1158,6 +1193,11 @@ function updateSyncBanner() {
   }
 }
 
+function saveSyncQueue() {
+  // สำรองคิวไว้ใน LocalStorage เพื่อกันข้อมูลสูญหายเมื่อรีโหลดหน้าเว็บ
+  localStorage.setItem('kruaOilOilSyncQueue', JSON.stringify(syncQueue));
+}
+
 async function processQueue() {
   if (isSyncing) return;
   isSyncing = true;
@@ -1172,6 +1212,7 @@ async function processQueue() {
       await fetch(url.toString(), {redirect:'follow'});
       
       syncQueue.shift(); 
+      saveSyncQueue(); // อัปเดตคิวที่เหลือลง LocalStorage
       updateSyncBanner();
     } catch (e) {
       console.error("Sync error:", e);
@@ -1179,7 +1220,6 @@ async function processQueue() {
     }
   }
   isSyncing = false;
-
   allEntriesCache = null;
 
   if (document.getElementById('sec-dashboard').classList.contains('active')) renderDashboard();
@@ -1189,6 +1229,7 @@ async function processQueue() {
 
 function enqueueTask(action, params) {
   syncQueue.push({action, params});
+  saveSyncQueue(); // สำรองคิวไว้เลยกันเว็บปิด
   processQueue();
 }
 
@@ -1286,7 +1327,7 @@ function clearForms(){
     `;
   }
 
-  saveDraftNow(); // บันทึกร่างที่ถูกล้างทิ้งลง DB
+  saveDraftNow(); // บันทึกความว่างเปล่าลงระบบ
   showToast('ล้างข้อมูลฟอร์มแล้ว ✓','');
 }
 
@@ -1456,7 +1497,7 @@ function addOtherItem() {
   saveDraftNow(); // บันทึกร่าง
 }
 
-// ── FORMS (Optimized Background Save) ──
+// ── FORMS ──
 function submitIncome(){
   if (incMode === 'single') {
     const date = document.getElementById('inc-date').value;
