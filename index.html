@@ -169,6 +169,11 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);fon
   display:flex;align-items:center;justify-content:space-between;
   padding:11px 14px;background:var(--surface2);
   border:1px solid var(--border);border-radius:var(--rsm);
+  transition: all 0.2s;
+}
+.entry.selected {
+  border-color: var(--orange);
+  background: var(--surface3);
 }
 .entry-l{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
 .entry-icon{
@@ -184,6 +189,25 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);fon
 .entry-r{display:flex;align-items:center;gap:8px;flex-shrink:0}
 .entry-amt{font-family:'Mitr',sans-serif;font-size:15px;font-weight:500}
 .ain{color:var(--green)} .aout{color:var(--red)}
+
+/* CUSTOM CHECKBOX */
+.entry-cb {
+  width: 20px; height: 20px;
+  border-radius: 6px; border: 2px solid var(--border2);
+  background: var(--surface); cursor: pointer;
+  appearance: none; -webkit-appearance: none;
+  position: relative; flex-shrink: 0;
+  transition: all 0.2s;
+}
+.entry-cb:checked {
+  background: var(--orange);
+  border-color: var(--orange);
+}
+.entry-cb:checked::after {
+  content: '✓'; position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%); color: #fff; font-size: 12px; font-weight: bold;
+}
+
 .del, .edit-btn{
   width:28px;height:28px;border-radius:50%;border:none;background:none;
   cursor:pointer;color:var(--text3);font-size:13px;
@@ -220,6 +244,16 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);fon
   font-size:12px;font-weight:500; cursor:pointer;background:transparent;color:var(--text3);
 }
 .tab-btn.active{background:var(--surface3);color:var(--text)}
+
+/* BULK ACTIONS TOOLBAR */
+.bulk-toolbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; background: var(--surface2);
+  border-radius: 10px; margin-bottom: 10px;
+  border: 1px solid var(--border); display: none;
+}
+.bulk-toolbar.active { display: flex; animation: slideDown 0.2s ease; }
+@keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 
 /* BOTTOM NAV */
 .bnav{
@@ -277,7 +311,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);fon
     <div class="logo-name">ครัว<span>ออยออย</span></div>
   </div>
   <div class="hdr-actions">
-    <button class="hdr-btn red-btn" onclick="clearForms()"><span>🗑</span> ล้าง</button>
+    <button class="hdr-btn red-btn" onclick="clearForms()"><span>🗑</span> ล้างฟอร์ม</button>
     <button class="hdr-btn" onclick="openSheet()"><span>📊</span> ชีท</button>
     <button class="hdr-btn" onclick="downloadExcel()"><span>⬇</span> Excel</button>
   </div>
@@ -378,6 +412,15 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);fon
       <button class="tab-btn" onclick="setHistTab('expense',this)">รายจ่าย</button>
     </div>
 
+    <!-- BULK TOOLBAR -->
+    <div id="bulk-toolbar" class="bulk-toolbar">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <input type="checkbox" id="cb-select-all" class="entry-cb" onclick="toggleSelectAll(this)">
+        <span id="bulk-count" style="font-size:13px; color:var(--text2);">เลือก 0 รายการ</span>
+      </div>
+      <button onclick="deleteSelected()" style="background:var(--red-dim); color:var(--red); border:1px solid var(--red); padding:4px 12px; border-radius:20px; font-size:12px; font-weight:bold; cursor:pointer;">🗑 ลบที่เลือก</button>
+    </div>
+
     <div id="history-list"></div>
   </div>
   <div class="spacer"></div>
@@ -429,13 +472,13 @@ let histTab = 'all';
 let allEntriesCache = null;
 let syncQueue = [];
 let isSyncing = false;
+let selectedIds = new Set();
 
 // ── BOOT ──
 window.onload = async () => {
   document.getElementById('inc-date').value = todayStr();
   document.getElementById('exp-date').value = todayStr();
   
-  // โหลดคิวงานเก่าถ้ามี
   const q = localStorage.getItem('kruaSyncQueue');
   if(q) syncQueue = JSON.parse(q);
   
@@ -449,19 +492,16 @@ async function getMergedEntries() {
     try {
       const res = await apiCall('getEntries', {});
       allEntriesCache = res.entries || [];
-      // Normalize dates
       allEntriesCache.forEach(e => { e.date = formatDate(e.date); });
     } catch(e) {
       allEntriesCache = [];
     }
   }
 
-  // ผสมงานที่กำลังรอคิว (Add, Delete, Update)
   let result = [...allEntriesCache];
-
   syncQueue.forEach(task => {
     if (task.action === 'addEntry') {
-      result.push({ ...task.params, id: 'temp_' + Date.now(), amount: Number(task.params.amount) });
+      result.push({ ...task.params, id: 'temp_' + Date.now() + Math.random(), amount: Number(task.params.amount) });
     } else if (task.action === 'deleteEntry') {
       result = result.filter(e => String(e.id) !== String(task.params.id));
     } else if (task.action === 'updateEntry') {
@@ -471,7 +511,6 @@ async function getMergedEntries() {
       }
     }
   });
-
   return result;
 }
 
@@ -479,8 +518,6 @@ async function getMergedEntries() {
 function enqueueTask(action, params) {
   syncQueue.push({ action, params });
   localStorage.setItem('kruaSyncQueue', JSON.stringify(syncQueue));
-  
-  // Refresh UI ทันที
   refreshCurrentUI();
   processQueue();
 }
@@ -497,18 +534,16 @@ async function processQueue() {
       url.searchParams.set('action', task.action);
       Object.entries(task.params).forEach(([k,v]) => url.searchParams.set(k, v));
       await fetch(url.toString(), { redirect: 'follow' });
-      
       syncQueue.shift();
       localStorage.setItem('kruaSyncQueue', JSON.stringify(syncQueue));
     } catch (e) {
-      console.error("Sync failed, retrying...", e);
       break; 
     }
   }
   
   isSyncing = false;
   if(syncQueue.length === 0) {
-    allEntriesCache = null; // บังคับโหลดใหม่ครั้งหน้า
+    allEntriesCache = null;
     document.getElementById('sync-banner').classList.remove('show');
     showToast("ซิงค์ข้อมูลเรียบร้อย ✓", "success");
     refreshCurrentUI();
@@ -519,6 +554,65 @@ function refreshCurrentUI() {
   const active = document.querySelector('.section.active').id;
   if (active === 'sec-dashboard') renderDashboard();
   if (active === 'sec-history') renderHistory();
+}
+
+// ── BULK DELETE LOGIC ──
+function toggleSelect(id, cb) {
+  const entryDiv = document.getElementById(`entry-row-${id}`);
+  if (cb.checked) {
+    selectedIds.add(String(id));
+    if(entryDiv) entryDiv.classList.add('selected');
+  } else {
+    selectedIds.delete(String(id));
+    if(entryDiv) entryDiv.classList.remove('selected');
+  }
+  updateBulkToolbar();
+}
+
+function toggleSelectAll(masterCb) {
+  const cbs = document.querySelectorAll('.history-cb');
+  cbs.forEach(cb => {
+    cb.checked = masterCb.checked;
+    const id = cb.dataset.id;
+    const entryDiv = document.getElementById(`entry-row-${id}`);
+    if (masterCb.checked) {
+      selectedIds.add(String(id));
+      if(entryDiv) entryDiv.classList.add('selected');
+    } else {
+      selectedIds.delete(String(id));
+      if(entryDiv) entryDiv.classList.remove('selected');
+    }
+  });
+  updateBulkToolbar();
+}
+
+function updateBulkToolbar() {
+  const toolbar = document.getElementById('bulk-toolbar');
+  const countLabel = document.getElementById('bulk-count');
+  if (selectedIds.size > 0) {
+    toolbar.classList.add('active');
+    countLabel.textContent = `เลือก ${selectedIds.size} รายการ`;
+  } else {
+    toolbar.classList.remove('active');
+    document.getElementById('cb-select-all').checked = false;
+  }
+}
+
+function deleteSelected() {
+  if (selectedIds.size === 0) return;
+  if (!confirm(`ยืนยันการลบ ${selectedIds.size} รายการที่เลือก?`)) return;
+
+  selectedIds.forEach(id => {
+    // ลบโดยไม่ส่ง Confirm ซ้ำ
+    syncQueue.push({ action: 'deleteEntry', params: { id } });
+  });
+  
+  selectedIds.clear();
+  localStorage.setItem('kruaSyncQueue', JSON.stringify(syncQueue));
+  updateBulkToolbar();
+  refreshCurrentUI();
+  processQueue();
+  showToast(`กำลังลบข้อมูล ${syncQueue.length} รายการ...`);
 }
 
 // ── EDIT LOGIC ──
@@ -535,28 +629,15 @@ async function openEditModal(id) {
 
   const extra = document.getElementById('edit-extra-field');
   if (item.type === 'income') {
-    extra.innerHTML = `
-      <label>ช่องทางรับเงิน</label>
-      <select id="edit-payType" class="field">
-        <option value="cash" ${item.payType==='cash'?'selected':''}>💵 เงินสด</option>
-        <option value="transfer" ${item.payType==='transfer'?'selected':''}>📲 เงินโอน</option>
-      </select>
-    `;
+    extra.innerHTML = `<label>ช่องทางรับเงิน</label><select id="edit-payType" class="field"><option value="cash" ${item.payType==='cash'?'selected':''}>💵 เงินสด</option><option value="transfer" ${item.payType==='transfer'?'selected':''}>📲 เงินโอน</option></select>`;
   } else {
     const cats = ['ค่าแรง', 'ตลาดสะพานใหม่', 'เซเว่น', 'แมคโคร', 'อื่นๆ'];
-    let options = cats.map(c => `<option value="${c}" ${item.cat===c?'selected':''}>${c}</option>`).join('');
-    extra.innerHTML = `
-      <label>หมวดหมู่</label>
-      <select id="edit-cat" class="field">${options}</select>
-    `;
+    extra.innerHTML = `<label>หมวดหมู่</label><select id="edit-cat" class="field">${cats.map(c => `<option value="${c}" ${item.cat===c?'selected':''}>${c}</option>`).join('')}</select>`;
   }
-
   document.getElementById('edit-modal').classList.add('active');
 }
 
-function closeEditModal() {
-  document.getElementById('edit-modal').classList.remove('active');
-}
+function closeEditModal() { document.getElementById('edit-modal').classList.remove('active'); }
 
 function saveEdit() {
   const id = document.getElementById('edit-id').value;
@@ -564,11 +645,9 @@ function saveEdit() {
   const date = document.getElementById('edit-date').value;
   const amount = document.getElementById('edit-amount').value;
   const note = document.getElementById('edit-note').value;
-
   const params = { id, type, date, amount, note };
   if (type === 'income') params.payType = document.getElementById('edit-payType').value;
   else params.cat = document.getElementById('edit-cat').value;
-
   enqueueTask('updateEntry', params);
   closeEditModal();
   showToast("บันทึกการแก้ไขแล้ว", "success");
@@ -578,21 +657,14 @@ function saveEdit() {
 async function renderDashboard() {
   const lbl = document.getElementById('dash-date-label');
   lbl.innerHTML = thaiDate(currentDay) + (currentDay === todayStr() ? '<span class="today-tag">วันนี้</span>' : '');
-
   const ents = await getMergedEntries();
   const dayItems = ents.filter(e => e.date === currentDay);
-  
   let inc = 0, exp = 0, cash = 0;
   dayItems.forEach(e => {
     const amt = Number(e.amount);
-    if (e.type === 'income') {
-      inc += amt;
-      if (e.payType === 'cash') cash += amt;
-    } else {
-      exp += amt;
-    }
+    if (e.type === 'income') { inc += amt; if (e.payType === 'cash') cash += amt; }
+    else { exp += amt; }
   });
-
   document.getElementById('m-income').textContent = fmt(inc);
   document.getElementById('m-expense').textContent = fmt(exp);
   document.getElementById('m-cash').textContent = fmt(cash);
@@ -600,11 +672,8 @@ async function renderDashboard() {
   const net = inc - exp;
   netEl.textContent = fmt(net);
   netEl.className = 'hero-val ' + (net >= 0 ? 'pos' : 'neg');
-
   const recent = [...dayItems].reverse().slice(0, 5);
-  document.getElementById('recent-list').innerHTML = recent.length === 0 
-    ? '<div class="empty">ไม่มีรายการวันนี้</div>' 
-    : '<div class="entry-list">' + recent.map(e => eHTML(e)).join('') + '</div>';
+  document.getElementById('recent-list').innerHTML = recent.length === 0 ? '<div class="empty">ไม่มีรายการวันนี้</div>' : '<div class="entry-list">' + recent.map(e => eHTML(e)).join('') + '</div>';
 }
 
 function changeDay(d) {
@@ -618,46 +687,37 @@ function setHistTab(tab, btn) {
   histTab = tab;
   document.querySelectorAll('#sec-history .tab-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
+  selectedIds.clear();
+  updateBulkToolbar();
   renderHistory();
 }
 
-function clearHistoryFilter() {
-  document.getElementById('hist-filter-date').value = "";
-  renderHistory();
-}
+function clearHistoryFilter() { document.getElementById('hist-filter-date').value = ""; renderHistory(); }
 
 async function renderHistory() {
   const listEl = document.getElementById('history-list');
   const filterDate = document.getElementById('hist-filter-date').value;
   listEl.innerHTML = '<div class="empty">กำลังโหลด...</div>';
-
   let ents = await getMergedEntries();
-  
-  // กรองตามประเภท
   if (histTab === 'income') ents = ents.filter(e => e.type === 'income');
   if (histTab === 'expense') ents = ents.filter(e => e.type === 'expense');
-  
-  // กรองตามวันที่
   if (filterDate) ents = ents.filter(e => e.date === filterDate);
-
-  // เรียงลำดับ ล่าสุดอยู่บน
   ents.sort((a,b) => b.date.localeCompare(a.date));
-
-  listEl.innerHTML = ents.length === 0 
-    ? '<div class="empty">ไม่พบข้อมูล</div>' 
-    : '<div class="entry-list">' + ents.map(e => eHTML(e, true)).join('') + '</div>';
+  listEl.innerHTML = ents.length === 0 ? '<div class="empty">ไม่พบข้อมูล</div>' : '<div class="entry-list">' + ents.map(e => eHTML(e, true)).join('') + '</div>';
 }
 
 // ── HELPERS ──
-function eHTML(e, showActions = false) {
+function eHTML(e, showCheckbox = false) {
   const isInc = e.type === 'income';
   const icon = isInc ? '💰' : (CAT_ICONS[e.cat] || '📦');
   const colorClass = isInc ? 'ain' : 'aout';
   const subText = isInc ? (e.payType === 'cash' ? 'เงินสด' : 'เงินโอน') : e.cat;
+  const isSelected = selectedIds.has(String(e.id));
   
   return `
-    <div class="entry">
+    <div class="entry ${isSelected?'selected':''}" id="entry-row-${e.id}">
       <div class="entry-l">
+        ${showCheckbox ? `<input type="checkbox" class="entry-cb history-cb" data-id="${e.id}" ${isSelected?'checked':''} onchange="toggleSelect('${e.id}', this)">` : ''}
         <div class="entry-icon ${isInc?'ei-in':'ei-out'}">${icon}</div>
         <div class="entry-body">
           <div class="entry-name">${e.note || (isInc?'รายรับ':'รายจ่าย')}</div>
@@ -678,12 +738,9 @@ async function submitIncome() {
   const amount = document.getElementById('inc-amount').value;
   const payType = document.querySelector('#pay-chips .chip.sel').dataset.val;
   const note = document.getElementById('inc-note').value;
-
   if(!amount || amount <= 0) return showToast("กรุณาระบุยอดเงิน", "error");
-  
   enqueueTask('addEntry', { type:'income', date, amount, payType, note });
-  document.getElementById('inc-amount').value = "";
-  document.getElementById('inc-note').value = "";
+  document.getElementById('inc-amount').value = ""; document.getElementById('inc-note').value = "";
   showToast("บันทึกรายรับแล้ว", "success");
 }
 
@@ -692,12 +749,9 @@ async function submitExpense() {
   const amount = document.getElementById('exp-amount').value;
   const cat = document.querySelector('#cat-chips .chip.sel').dataset.val;
   const note = document.getElementById('exp-note').value;
-
   if(!amount || amount <= 0) return showToast("กรุณาระบุยอดเงิน", "error");
-
   enqueueTask('addEntry', { type:'expense', date, amount, cat, note });
-  document.getElementById('exp-amount').value = "";
-  document.getElementById('exp-note').value = "";
+  document.getElementById('exp-amount').value = ""; document.getElementById('exp-note').value = "";
   showToast("บันทึกรายจ่ายแล้ว", "success");
 }
 
@@ -709,19 +763,8 @@ function deleteEntry(id) {
 
 function clearForms() {
   if(!confirm("ต้องการล้างข้อมูลที่กรอกค้างไว้ในฟอร์มทั้งหมดใช่หรือไม่?")) return;
-  
-  // ล้างรายรับ
-  document.getElementById('inc-amount').value = "";
-  document.getElementById('inc-note').value = "";
-  document.getElementById('inc-date').value = todayStr();
-  document.querySelectorAll('#pay-chips .chip').forEach((c, i) => i === 0 ? c.classList.add('sel') : c.classList.remove('sel'));
-  
-  // ล้างรายจ่าย
-  document.getElementById('exp-amount').value = "";
-  document.getElementById('exp-note').value = "";
-  document.getElementById('exp-date').value = todayStr();
-  document.querySelectorAll('#cat-chips .chip').forEach((c, i) => i === 0 ? c.classList.add('sel') : c.classList.remove('sel'));
-  
+  document.getElementById('inc-amount').value = ""; document.getElementById('inc-note').value = ""; document.getElementById('inc-date').value = todayStr();
+  document.getElementById('exp-amount').value = ""; document.getElementById('exp-note').value = ""; document.getElementById('exp-date').value = todayStr();
   showToast("ล้างข้อมูลฟอร์มแล้ว ✓");
 }
 
@@ -733,43 +776,23 @@ function switchTab(tab, el) {
   refreshCurrentUI();
 }
 
-function selectChip(el, gid) {
-  document.querySelectorAll('#'+gid+' .chip').forEach(c => c.classList.remove('sel'));
-  el.classList.add('sel');
-}
-
+function selectChip(el, gid) { document.querySelectorAll('#'+gid+' .chip').forEach(c => c.classList.remove('sel')); el.classList.add('sel'); }
 function todayStr() { return new Date().toISOString().split('T')[0]; }
-function formatDate(d) { 
-  if(!d) return "";
-  const dt = new Date(d);
-  return isNaN(dt) ? d : dt.toISOString().split('T')[0];
-}
-function thaiDate(s) {
-  if(!s) return "";
-  const d = new Date(s);
-  return d.toLocaleDateString('th-TH', { day:'numeric', month:'short', year:'2-digit' });
-}
+function formatDate(d) { if(!d) return ""; const dt = new Date(d); return isNaN(dt) ? d : dt.toISOString().split('T')[0]; }
+function thaiDate(s) { if(!s) return ""; const d = new Date(s); return d.toLocaleDateString('th-TH', { day:'numeric', month:'short', year:'2-digit' }); }
 function fmt(n) { return '฿' + Number(n).toLocaleString('th-TH'); }
-function showToast(m, t) {
-  const el = document.getElementById('toast');
-  el.textContent = m; el.className = 'show ' + (t || '');
-  setTimeout(() => el.className = '', 2500);
-}
+function showToast(m, t) { const el = document.getElementById('toast'); el.textContent = m; el.className = 'show ' + (t || ''); setTimeout(() => el.className = '', 2500); }
 async function apiCall(action, params) {
-  const url = new URL(SCRIPT_URL);
-  url.searchParams.set('action', action);
+  const url = new URL(SCRIPT_URL); url.searchParams.set('action', action);
   Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, v));
-  const r = await fetch(url.toString(), { redirect: 'follow' });
-  return await r.json();
+  const r = await fetch(url.toString(), { redirect: 'follow' }); return await r.json();
 }
 function openSheet() { window.open(SHEET_URL, '_blank'); }
 async function downloadExcel() {
   showToast("กำลังเตรียมไฟล์...", "");
   const ents = await getMergedEntries();
   const ws = XLSX.utils.json_to_sheet(ents);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Data");
-  XLSX.writeFile(wb, "ครัวออยออย_Export.xlsx");
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Data"); XLSX.writeFile(wb, "ครัวออยออย_Export.xlsx");
 }
 </script>
 </body>
