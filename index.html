@@ -100,12 +100,21 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);fon
 .logo-name span{color:var(--orange)}
 .hdr-actions{display:flex;gap:8px;align-items:center}
 .hdr-btn{
-  display:flex;align-items:center;gap:5px; padding:7px 14px;border-radius:20px;
+  display:flex;align-items:center;gap:5px; padding:7px 12px;border-radius:20px;
   border:1.5px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.08);
-  color:#fff;font-size:12px;font-weight:500; cursor:pointer;font-family:'Sarabun',sans-serif;
+  color:#fff;font-size:11px;font-weight:500; cursor:pointer;font-family:'Sarabun',sans-serif;
   transition:all 0.15s;white-space:nowrap;
 }
 .hdr-btn:hover{background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.3)}
+.hdr-btn.red-btn {
+  border-color: rgba(224,80,96,0.5);
+  color: #ff8a96;
+  background: rgba(224,80,96,0.1);
+}
+.hdr-btn.red-btn:hover {
+  background: rgba(224,80,96,0.2);
+  border-color: var(--red);
+}
 
 /* SECTIONS */
 .section{display:none}
@@ -268,6 +277,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);fon
     <div class="logo-name">ครัว<span>ออยออย</span></div>
   </div>
   <div class="hdr-actions">
+    <button class="hdr-btn red-btn" onclick="clearForms()"><span>🗑</span> ล้าง</button>
     <button class="hdr-btn" onclick="openSheet()"><span>📊</span> ชีท</button>
     <button class="hdr-btn" onclick="downloadExcel()"><span>⬇</span> Excel</button>
   </div>
@@ -695,6 +705,24 @@ function deleteEntry(id) {
   if(!confirm("ยืนยันการลบรายการนี้?")) return;
   enqueueTask('deleteEntry', { id });
   showToast("ลบข้อมูลแล้ว");
+}
+
+function clearForms() {
+  if(!confirm("ต้องการล้างข้อมูลที่กรอกค้างไว้ในฟอร์มทั้งหมดใช่หรือไม่?")) return;
+  
+  // ล้างรายรับ
+  document.getElementById('inc-amount').value = "";
+  document.getElementById('inc-note').value = "";
+  document.getElementById('inc-date').value = todayStr();
+  document.querySelectorAll('#pay-chips .chip').forEach((c, i) => i === 0 ? c.classList.add('sel') : c.classList.remove('sel'));
+  
+  // ล้างรายจ่าย
+  document.getElementById('exp-amount').value = "";
+  document.getElementById('exp-note').value = "";
+  document.getElementById('exp-date').value = todayStr();
+  document.querySelectorAll('#cat-chips .chip').forEach((c, i) => i === 0 ? c.classList.add('sel') : c.classList.remove('sel'));
+  
+  showToast("ล้างข้อมูลฟอร์มแล้ว ✓");
 }
 
 function switchTab(tab, el) {
